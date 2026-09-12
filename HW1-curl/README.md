@@ -6,7 +6,7 @@
 
 這份 README 只是入口,**真正的內容(包含 HTTP 封包圖解、`curl -v` 真實抓封包動畫、教學流程圖)在網頁版**:
 
-👉 **[https://你的帳號.github.io/hw1-curl/](https://你的帳號.github.io/hw1-curl/)** ← 部署後填入
+👉 **[https://NaroFeng.github.io/hw1-curl/](https://你的帳號.github.io/hw1-curl/)** ← 部署後填入
 
 網頁版包含:
 - HTTP request / response 拆解(彩色高亮 method / path / headers)
