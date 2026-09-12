@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>hw1-curl — 從殼層到底層,重新理解 HTTP</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#top">⚡ hw1-curl</a>
+      <ul class="nav-links">
+        <li><a href="#goals">目標</a></li>
+        <li><a href="#versions">版本</a></li>
+        <li><a href="#why">理念</a></li>
+        <li><a href="#http-deep">HTTP 解析</a></li>
+        <li><a href="#usage">使用</a></li>
+        <li><a href="#tests">測試</a></li>
+        <li><a href="#next">延伸</a></li>
+      </ul>
+      <button class="theme-toggle" id="themeToggle" aria-label="切換主題">🌙</button>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <p class="eyebrow">HW1 · 現代軟體工程</p>
+      <h1>從殼層到底層<br>重新理解 HTTP</h1>
+      <p class="subtitle">「寫一個 curl」這個作業,真正學到的是:HTTP 不是魔法,是純文字協定。</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#http-deep">▶ 看 HTTP 到底長什麼樣子</a>
+        <a class="btn ghost" href="https://github.com/" target="_blank" rel="noopener">原始碼</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ 學習目標 ============ -->
+    <section id="goals" class="section">
+      <h2>📌 學習目標</h2>
+      <p class="lead">這次作業表面上是「寫 curl」,但實際上要回答的是這些問題:</p>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-icon">🔍</div>
+          <h3>看懂 HTTP 封包</h3>
+          <p>HTTP request / response 真正的 byte 內容長什麼樣?每一行在做什麼?</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌐</div>
+          <h3>理解網路分層</h3>
+          <p>TCP socket 在哪一層?TLS 又是什麼?HTTP 為什麼要「站在」它們上面?</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🧠</div>
+          <h3>黑盒子 vs 白盒子</h3>
+          <p>呼叫 <code>curl</code> 跟理解 <code>curl</code> 的差別,是這次作業的核心。</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔐</div>
+          <h3>為什麼需要 API Key</h3>
+          <p>Server 怎麼認人?<code>Authorization</code> header 為什麼不能亂給?</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 版本比較 ============ -->
+    <section id="versions" class="section">
+      <h2>🧰 三個版本,三種視角</h2>
+      <p class="lead">同一個 HTTP GET,從三個完全不同的高度看它:</p>
+
+      <div class="compare-table">
+        <div class="ct-row ct-head">
+          <div>版本</div><div>工具 / 介面</div><div>語言</div><div>底層到底做了什麼</div>
+        </div>
+        <div class="ct-row">
+          <div><span class="tag v1">v1</span></div>
+          <div><code>curl</code></div>
+          <div>Bash</div>
+          <div>呼叫別人寫好的 C 程式,封包細節完全看不到</div>
+        </div>
+        <div class="ct-row">
+          <div><span class="tag v2">v2</span></div>
+          <div><code>socket</code> + <code>ssl</code></div>
+          <div>Python</div>
+          <div>自己開 TCP socket、TLS 握手、組 HTTP 文字、解析回應</div>
+        </div>
+        <div class="ct-row">
+          <div><span class="tag v3">v3</span></div>
+          <div><code>TcpClient</code> + <code>SslStream</code></div>
+          <div>PowerShell</div>
+          <div>同上,但走 .NET 框架。證明「換語言不換邏輯」</div>
+        </div>
+      </div>
+
+      <p class="hint">v2 / v3 邏輯一模一樣 — 只是換語言寫。這證明 <strong>HTTP 協定</strong>本身跟語言無關。</p>
+    </section>
+
+    <!-- ============ 為什麼要寫多版本 ============ -->
+    <section id="why" class="section">
+      <h2>💡 為什麼要寫三個版本?</h2>
+      <p class="lead">直接寫 <code>fetch.sh</code> 包 <code>curl</code> 不就好了嗎?</p>
+
+      <div class="quote-box">
+        <p>「這樣我豈不是脫褲子放屁?我根本沒有創造出我的 curl,我只是寫了個包含了 curl 的腳本?」</p>
+        <p class="quote-from">— 寫到一半的我自己</p>
+      </div>
+
+      <p>這個質疑是對的。<code>fetch.sh</code> 沒有「創造」任何東西,它只是把 curl 重新包裝。</p>
+
+      <p>但 <strong>理解 ≠ 重新發明</strong>。我們的目標是搞清楚 HTTP 在幹嘛,不是為了取代 curl 工程師 (他們寫了 100 萬行 C)。寫第二、第三版本不是要「取代」curl,而是要 <strong>打開黑盒子</strong>:</p>
+
+      <div class="level-diagram">
+        <div class="level l4">
+          <div class="level-label">應用層</div>
+          <div class="level-content">HTTP request / response(純文字)</div>
+        </div>
+        <div class="level-arrow">│ ↑ ↓ │</div>
+        <div class="level l3">
+          <div class="level-label">加密層</div>
+          <div class="level-content">TLS / SSL(把上面的文字加密)</div>
+        </div>
+        <div class="level-arrow">│ ↑ ↓ │</div>
+        <div class="level l2">
+          <div class="level-label">傳輸層</div>
+          <div class="level-content">TCP(可靠的 byte stream)</div>
+        </div>
+        <div class="level-arrow">│ ↑ ↓ │</div>
+        <div class="level l1">
+          <div class="level-label">網路層</div>
+          <div class="level-content">IP + 乙太網路 / Wi-Fi(實體傳輸)</div>
+        </div>
+      </div>
+
+      <p>v1 我們只看見最上面那一層「HTTP 文字」,v2 / v3 我們實際觸碰到下面兩層 — 這就是差別。</p>
+    </section>
+
+    <!-- ============ HTTP 深度解析 ============ -->
+    <section id="http-deep" class="section highlight">
+      <h2>🧬 HTTP 協定深度解析</h2>
+      <p class="lead">一個 HTTP GET 到底送了什麼?Server 回什麼?每一行在做什麼?</p>
+
+      <h3>① 一次 HTTP 請求的一生</h3>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-text">
+            <strong>DNS 查詢</strong><br>
+            <code>jsonplaceholder.typicode.com</code> → IP 位址
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-text">
+            <strong>TCP 三次握手</strong><br>
+            客戶端跟伺服器建立可靠連線
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-text">
+            <strong>TLS 握手</strong> (HTTPS 才會有)<br>
+            雙方協商加密方式,驗證伺服器身分
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-text">
+            <strong>送 HTTP request</strong><br>
+            一段純文字,描述「我要什麼」
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-num">5</div>
+          <div class="flow-text">
+            <strong>收 HTTP response</strong><br>
+            一段純文字,描述「這是你要的東西」
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+          <div class="flow-num">6</div>
+          <div class="flow-text">
+            <strong>關閉連線</strong> (<code>Connection: close</code>)<br>
+            或保留給下一個請求用 (HTTP/1.1 keep-alive)
+          </div>
+        </div>
+      </div>
+
+      <h3>② Request:我們送出去的純文字</h3>
+      <p>當你打 <code>./fetch_raw.py posts 1</code>,這段 byte 序列就會被丟到網路上:</p>
+
+      <div class="packet">
+        <div class="packet-header">→ 送出 (Request)</div>
+<pre><code><span class="hl-method">GET</span> <span class="hl-path">/posts/1</span> <span class="hl-version">HTTP/1.1</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">Host</span>: <span class="hl-header-value">jsonplaceholder.typicode.com</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">User-Agent</span>: <span class="hl-header-value">fetch_raw.py</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">Accept</span>: <span class="hl-header-value">*/*</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">Connection</span>: <span class="hl-header-value">close</span><span class="hl-crlf">\r\n</span>
+<span class="hl-crlf">\r\n</span></code></pre>
+      </div>
+
+      <div class="annotate">
+        <div class="ann">
+          <div class="ann-tag">第一行</div>
+          <p><strong>Request Line</strong>:<code>方法 路徑 版本</code></p>
+          <ul>
+            <li><code>GET</code> — 動詞(讀取)</li>
+            <li><code>/posts/1</code> — 我要拿編號 1 的 post</li>
+            <li><code>HTTP/1.1</code> — 協定版本</li>
+          </ul>
+        </div>
+        <div class="ann">
+          <div class="ann-tag">Host</div>
+          <p>必填。一個 IP 可能掛很多網站,<code>Host</code> 告訴 server 要去哪一個。</p>
+        </div>
+        <div class="ann">
+          <div class="ann-tag">User-Agent</div>
+          <p>告訴 server 「我是誰」。瀏覽器送 <code>Mozilla/5.0...</code>,我們送 <code>fetch_raw.py</code>。</p>
+        </div>
+        <div class="ann">
+          <div class="ann-tag">Connection: close</div>
+          <p>回完就斷線,簡化本次 demo。正式專案會用 <code>keep-alive</code> 重用連線。</p>
+        </div>
+        <div class="ann">
+          <div class="ann-tag">最後那行空 \r\n</div>
+          <p><strong>headers 跟 body 的分界</strong>。GET 沒 body,但仍要送這個空行。</p>
+        </div>
+      </div>
+
+      <h3>③ 對應到程式碼</h3>
+      <p>上面那段文字,在 <code>fetch_raw.py</code> 是這樣產生的:</p>
+
+<pre><code class="lang-py"><span class="hl-comment"># lib/http_client.py, get() 方法</span>
+header_lines = [
+    f<span class="hl-string">"GET {path} HTTP/1.1"</span>,
+    f<span class="hl-string">"Host: {self.host}"</span>,
+    <span class="hl-string">"User-Agent: fetch_raw.py"</span>,
+    <span class="hl-string">"Accept: */*"</span>,
+    <span class="hl-string">"Connection: close"</span>,
+]
+request = (<span class="hl-string">"\r\n"</span>.join(header_lines) + <span class="hl-string">"\r\n\r\n"</span>).encode(<span class="hl-string">"utf-8"</span>)
+sock.sendall(request)</code></pre>
+
+      <p>就是「把字串拼好 → encode 成 byte → 丟進 socket」。<strong>沒有任何神秘的 API</strong>,純字串處理。</p>
+
+      <h3>④ Response:伺服器回給我們的純文字</h3>
+      <p>Server 回的東西長這樣 (這是真實抓到的回應,稍微精簡):</p>
+
+      <div class="packet">
+        <div class="packet-header incoming">← 收到 (Response)</div>
+<pre><code><span class="hl-version">HTTP/1.1</span> <span class="hl-status-200">200</span> <span class="hl-reason">OK</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">Content-Type</span>: <span class="hl-header-value">application/json; charset=utf-8</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">Transfer-Encoding</span>: <span class="hl-header-value">chunked</span><span class="hl-crlf">\r\n</span>
+<span class="hl-header-name">Date</span>: <span class="hl-header-value">Mon, 12 Sep 2026 10:00:00 GMT</span><span class="hl-crlf">\r\n</span>
+<span class="hl-crlf">\r\n</span>
+<span class="hl-chunk-size">1bf</span><span class="hl-crlf">\r\n</span>
+<span class="hl-body">{</span>
+  <span class="hl-body">"userId": 1,</span>
+  <span class="hl-body">"id": 1,</span>
+  <span class="hl-body">"title": "sunt aut facere repellat ..."</span>
+<span class="hl-body">}</span><span class="hl-crlf">\r\n</span>
+<span class="hl-chunk-size">0</span><span class="hl-crlf">\r\n</span>
+<span class="hl-crlf">\r\n</span></code></pre>
+      </div>
+
+      <div class="annotate">
+        <div class="ann">
+          <div class="ann-tag">狀態列</div>
+          <p><code>HTTP/1.1 200 OK</code> — 版本 + 數字 + 文字描述</p>
+          <ul>
+            <li><strong>2xx</strong> = 成功</li>
+            <li><strong>3xx</strong> = 重新導向</li>
+            <li><strong>4xx</strong> = 你的問題 (例如 404)</li>
+            <li><strong>5xx</strong> = server 的問題</li>
+          </ul>
+        </div>
+        <div class="ann">
+          <div class="ann-tag">Transfer-Encoding: chunked</div>
+          <p>server 還不知道 body 總大小時會用這個。<strong>把 body 切成好幾塊</strong>,每塊前面寫 16 進位的 size,最後一塊寫 <code>0\r\n\r\n</code> 表示結束。</p>
+        </div>
+        <div class="ann">
+          <div class="ann-tag">1bf (十六進位)</div>
+          <p>= 447 bytes 的內容。所以下一行到 <code>\r\n</code> 之間,就是這塊 body。</p>
+        </div>
+      </div>
+
+      <h3>⑤ 自己解 chunked</h3>
+      <p>如果 server 用 chunked,我們要自己解開。我們的程式碼長這樣:</p>
+
+<pre><code class="lang-py"><span class="hl-comment"># lib/http_client.py</span>
+<span class="hl-keyword">def</span> _decode_chunked(data):
+    out = bytearray()
+    i = <span class="hl-num">0</span>
+    <span class="hl-keyword">while</span> i &lt; len(data):
+        crlf = data.find(<span class="hl-string">b"\r\n"</span>, i)
+        size = <span class="hl-builtin">int</span>(data[i:crlf], <span class="hl-num">16</span>)     <span class="hl-comment"># 讀十六進位 size</span>
+        <span class="hl-keyword">if</span> size == <span class="hl-num">0</span>: <span class="hl-keyword">break</span>
+        out.extend(data[crlf + <span class="hl-num">2</span> : crlf + <span class="hl-num">2</span> + size])
+        i = crlf + <span class="hl-num">2</span> + size + <span class="hl-num">2</span>
+    <span class="hl-keyword">return</span> <span class="hl-builtin">bytes</span>(out)</code></pre>
+
+      <p>這就是為什麼 <code>curl</code> 內部其實做了上千行這類解析 — 我們的版本只支援最基本的情況,但已經能跟 server 溝通。</p>
+
+      <h3>⑥ TLS 在做什麼?(一句話帶過)</h3>
+      <p>HTTP 是明文,任何中間人都看得到你打的密碼。<strong>TLS</strong> 在 TCP 之上、HTTP 之下,幫你把 HTTP 文字加密。程式裡對應的這一行:</p>
+
+<pre><code class="lang-py"><span class="hl-keyword">if</span> self.use_tls:
+    ctx = ssl.create_default_context()
+    sock = ctx.wrap_socket(sock, server_hostname=self.host)</code></pre>
+
+      <p>就是把「明文 socket」包成「加密 socket」。之後不管你丟什麼,外面看到的都是亂碼。</p>
+    </section>
+
+    <!-- ============ 檔案結構 ============ -->
+    <section id="structure" class="section">
+      <h2>📁 檔案結構</h2>
+<pre><code>hw1-curl/
+├── index.html              <span class="hl-comment">← 你現在看的這個頁面</span>
+├── style.css
+├── fetch.sh                <span class="hl-comment"># v1: Bash + curl</span>
+├── fetch_raw.py            <span class="hl-comment"># v2: Python + socket</span>
+├── fetch_raw.ps1           <span class="hl-comment"># v3: PowerShell + .NET</span>
+├── lib/
+│   ├── api.sh              <span class="hl-comment"># shell 共用函式</span>
+│   └── http_client.py      <span class="hl-comment"># python HTTP client</span>
+└── tests/
+    ├── test_fetch.sh       <span class="hl-comment"># 10 個 shell 測試</span>
+    ├── test_fetch_raw.py   <span class="hl-comment"># 9 個 python 測試</span>
+    └── test_fetch_raw.sh   <span class="hl-comment"># 14 個 powershell 測試</span></code></pre>
+    </section>
+
+    <!-- ============ 使用方式 ============ -->
+    <section id="usage" class="section">
+      <h2>🚀 快速上手</h2>
+      <p class="lead">三個版本用法一模一樣:<code>fetch 資源 [id]</code></p>
+
+      <h3>v1 · fetch.sh</h3>
+<pre><code class="lang-bash">./fetch.sh posts           <span class="hl-comment"># 拿所有文章</span>
+./fetch.sh posts 1         <span class="hl-comment"># 拿第 1 篇</span>
+./fetch.sh users           <span class="hl-comment"># 拿所有使用者</span>
+./fetch.sh posts 9999      <span class="hl-comment"># 拿不存在的 ID → 404</span></code></pre>
+
+      <h3>v2 · fetch_raw.py</h3>
+<pre><code class="lang-bash">python fetch_raw.py posts 1</code></pre>
+
+      <h3>v3 · fetch_raw.ps1</h3>
+<pre><code class="lang-powershell">powershell -ExecutionPolicy Bypass -File .\fetch_raw.ps1 posts 1</code></pre>
+    </section>
+
+    <!-- ============ 測試 ============ -->
+    <section id="tests" class="section">
+      <h2>✅ 測試</h2>
+      <p>每個版本都有對應的測試,共 <strong>33 個測試案例</strong>:</p>
+
+      <div class="test-summary">
+        <div class="test-card v1">
+          <div class="test-num">10</div>
+          <div class="test-label">shell 測試</div>
+        </div>
+        <div class="test-card v2">
+          <div class="test-num">9</div>
+          <div class="test-label">python 測試</div>
+        </div>
+        <div class="test-card v3">
+          <div class="test-num">14</div>
+          <div class="test-label">powershell 測試</div>
+        </div>
+      </div>
+
+      <h3>一次跑全部</h3>
+<pre><code class="lang-bash"><span class="hl-comment"># 在 GitHub Actions 或本地都可以跑</span>
+./tests/test_fetch.sh                                  <span class="hl-comment"># shell</span>
+python -m unittest discover -s tests -p "test_fetch_raw.py" -v  <span class="hl-comment"># python</span>
+./tests/test_fetch_raw.sh                              <span class="hl-comment"># powershell</span></code></pre>
+
+      <p>每個測試都檢查:</p>
+      <ul>
+        <li>HTTP 狀態碼 (200 / 404)</li>
+        <li>回應 body 的關鍵欄位</li>
+        <li>CLI 端對端執行結果</li>
+        <li>錯誤處理 (沒有參數、404 退出碼)</li>
+      </ul>
+    </section>
+
+    <!-- ============ 延伸學習 ============ -->
+    <section id="next" class="section">
+      <h2>🎯 給讀這份作業的你</h2>
+      <p class="lead">如果你看到這裡,想自己玩玩看,可以試這些:</p>
+
+      <div class="next-grid">
+        <div class="next-card">
+          <div class="next-num">1</div>
+          <h4>用 curl 看真實封包</h4>
+<pre><code class="lang-bash">curl -v https://jsonplaceholder.typicode.com/posts/1</code></pre>
+          <p>你會看到 <code>&gt;</code> 是送出的,<code>&lt;</code> 是收到的,跟我們上面畫的完全一樣。</p>
+        </div>
+        <div class="next-card">
+          <div class="next-num">2</div>
+          <h4>改成 POST</h4>
+          <p>把 <code>GET</code> 改成 <code>POST</code>,加上 body,觀察 server 怎麼回。</p>
+        </div>
+        <div class="next-card">
+          <div class="next-num">3</div>
+          <h4>加 API Key</h4>
+          <p>把 <code>BASE_URL</code> 換成中央氣象局,加上 <code>Authorization</code> header,就能抓真實天氣資料。</p>
+        </div>
+        <div class="next-card">
+          <div class="next-num">4</div>
+          <h4>用 Wireshark 觀察</h4>
+          <p>裝 Wireshark,過濾 <code>tcp.port == 443</code>,執行我們的腳本,你會看到 TLS 握手 + 加密後的 HTTP。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 參考資料 ============ -->
+    <section id="refs" class="section">
+      <h2>📚 參考資料</h2>
+      <ul class="refs">
+        <li><a href="https://datatracker.ietf.org/doc/html/rfc7230" target="_blank" rel="noopener">RFC 7230 — HTTP/1.1: Message Syntax and Routing</a></li>
+        <li><a href="https://datatracker.ietf.org/doc/html/rfc7231" target="_blank" rel="noopener">RFC 7231 — HTTP/1.1: Semantics and Content</a></li>
+        <li><a href="https://datatracker.ietf.org/doc/html/rfc8446" target="_blank" rel="noopener">RFC 8446 — TLS 1.3</a></li>
+        <li><a href="https://docs.python.org/3/library/socket.html" target="_blank" rel="noopener">Python <code>socket</code> 官方文件</a></li>
+        <li><a href="https://docs.python.org/3/library/ssl.html" target="_blank" rel="noopener">Python <code>ssl</code> 官方文件</a></li>
+        <li><a href="https://everything.curl.dev/" target="_blank" rel="noopener">everything curl — curl 內部運作</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>現代軟體工程 · HW1 · 用三個版本重新理解 HTTP</p>
+    <p class="footer-meta">HTML 頁面設計給 GitHub Pages 使用</p>
+  </footer>
+
+  <script>
+    const btn = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    btn.addEventListener('click', () => {
+      root.classList.toggle('dark');
+      btn.textContent = root.classList.contains('dark') ? '☀️' : '🌙';
+      localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+      root.classList.add('dark');
+      btn.textContent = '☀️';
+    }
+  </script>
+</body>
+</html>
