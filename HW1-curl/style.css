@@ -481,6 +481,34 @@ pre code { background: none; border: none; padding: 0; color: inherit; }
 .hl-num       { color: #fbbf24; }
 .hl-builtin   { color: #60a5fa; }
 
+/* ============ GIF FRAME ============ */
+.gif-frame {
+  margin: 20px 0 28px;
+  background: var(--bg-code);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.gif-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.gif-caption {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #9ca3af;
+  font-size: 0.85rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.gif-caption code {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #93c5fd;
+  padding: 1px 6px;
+}
+
 /* ============ TEST SUMMARY ============ */
 .test-summary {
   display: grid;

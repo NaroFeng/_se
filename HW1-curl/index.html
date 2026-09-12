@@ -195,6 +195,11 @@
       <h3>② Request:我們送出去的純文字</h3>
       <p>當你打 <code>./fetch_raw.py posts 1</code>,這段 byte 序列就會被丟到網路上:</p>
 
+      <div class="gif-frame">
+        <img src="assets/curl-v-animation.gif" alt="curl -v 即時抓封包動畫">
+        <div class="gif-caption">▶ 實際跑 <code>curl -v</code> 的過程 — 真實封包一個一個冒出來</div>
+      </div>
+
       <div class="packet">
         <div class="packet-header">→ 送出 (Request)</div>
 <pre><code><span class="hl-method">GET</span> <span class="hl-path">/posts/1</span> <span class="hl-version">HTTP/1.1</span><span class="hl-crlf">\r\n</span>
