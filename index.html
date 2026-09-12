@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>現代軟體工程 — 學生作業首頁</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#top">📚 現代軟體工程</a>
+      <ul class="nav-links">
+        <li><a href="#hws">作業列表</a></li>
+        <li><a href="#about">關於</a></li>
+      </ul>
+      <button class="theme-toggle" id="themeToggle" aria-label="切換主題">🌙</button>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <p class="eyebrow">115 學年上學期 · 金門大學資工系</p>
+      <h1>現代軟體工程<br>作業總覽</h1>
+      <p class="subtitle">從殼層到底層,從協定到系統 — 一邊寫程式,一邊理解程式怎麼運作。</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#hws">▶ 看所有作業</a>
+        <a class="btn ghost" href="HW1-curl/index.html">HW1 · 寫一個 curl</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ 作業列表 ============ -->
+    <section id="hws" class="section">
+      <h2>📂 作業列表</h2>
+      <p class="lead">本學期 12 次作業,從最底層的 HTTP 協定開始,一路往上蓋到軟體工程實務。</p>
+
+      <div class="hw-grid">
+        <!-- HW1 -->
+        <a class="hw-card done" href="HW1-curl/index.html">
+          <div class="hw-num">HW1</div>
+          <div class="hw-title">寫一個 curl</div>
+          <div class="hw-desc">用三種語言重新理解 HTTP — 從 Bash 呼叫、Python socket、PowerShell .NET 看見封包。</div>
+          <div class="hw-status"><span class="dot"></span>已完成</div>
+        </a>
+
+        <!-- HW2~HW12 (佔位) -->
+        <a class="hw-card" href="HW2-/">
+          <div class="hw-num">HW2</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW3-/">
+          <div class="hw-num">HW3</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW4-/">
+          <div class="hw-num">HW4</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW5-/">
+          <div class="hw-num">HW5</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW6-/">
+          <div class="hw-num">HW6</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW7-/">
+          <div class="hw-num">HW7</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW8-/">
+          <div class="hw-num">HW8</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW9-/">
+          <div class="hw-num">HW9</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW10-/">
+          <div class="hw-num">HW10</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW11-/">
+          <div class="hw-num">HW11</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+
+        <a class="hw-card" href="HW12-/">
+          <div class="hw-num">HW12</div>
+          <div class="hw-title">(主題待定)</div>
+          <div class="hw-desc">待補上學習目標與簡述。</div>
+          <div class="hw-status"><span class="dot"></span>規劃中</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ 課程資訊 ============ -->
+    <section id="about" class="section">
+      <h2>🎓 關於這份作業</h2>
+      <p class="lead">金門大學資訊工程系 · 115 學年上學期 · 現代軟體工程。</p>
+
+      <div class="info-table">
+        <div class="info-row">
+          <div class="info-label">學期</div>
+          <div>115 學年上學期</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">教師</div>
+          <div><a href="https://www.nqu.edu.tw/educsie/index.php?act=blog&code=list&ids=4" target="_blank" rel="noopener">陳鍾誠</a></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">學校</div>
+          <div><a href="https://www.nqu.edu.tw/educsie/index.php" target="_blank" rel="noopener">金門大學資訊工程系</a></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">學生</div>
+          <div>馮至豪</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">學號</div>
+          <div>45</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>現代軟體工程 · 115 上 · 學生作業首頁</p>
+    <p class="footer-meta">HTML 頁面設計給 GitHub Pages 使用</p>
+  </footer>
+
+  <script>
+    const btn = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    btn.addEventListener('click', () => {
+      root.classList.toggle('dark');
+      btn.textContent = root.classList.contains('dark') ? '☀️' : '🌙';
+      localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light');
+    });
+    if (localStorage.getItem('theme') === 'dark') {
+      root.classList.add('dark');
+      btn.textContent = '☀️';
+    }
+  </script>
+</body>
+</html>
