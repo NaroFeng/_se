@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>履歷問卷蒐集系統 | Resume Survey System</title>
+  <meta name="description" content="蒐集履歷問卷的極簡 Web 系統：填寫表單、上傳大頭照、即時檢視已提交的履歷卡片。" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Tailwind CDN 離線時的最小可用版面（僅供無網路環境備援）。
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: { 50: '#f6f7f9', 100: '#eceef2', 200: '#d5dae3', 700: '#39415a', 900: '#171b26' },
+            brand: { 50: '#eef4ff', 100: '#d9e6ff', 500: '#3b6fe0', 600: '#2f5cc6', 700: '#25499e' }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: ui-sans-serif, system-ui, "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+    .fb-shell { max-width: 1120px; margin: 0 auto; padding: 0 1rem; }
+    .fb-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #e3e7ee; }
+    .fb-brand { font-weight: 700; font-size: 1.05rem; letter-spacing: .02em; }
+    .fb-navlinks { display: flex; gap: 1rem; font-size: .9rem; }
+    .fb-navlinks a { color: #39415a; text-decoration: none; }
+    .fb-navlinks a:hover { color: #2f5cc6; }
+    .fb-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin: 2rem 0 3rem; }
+    @media (min-width: 960px) { .fb-grid { grid-template-columns: 5fr 7fr; align-items: start; } }
+    .fb-card { background: #fff; border: 1px solid #e3e7ee; border-radius: 14px; padding: 1.25rem; box-shadow: 0 1px 2px rgba(23,27,38,.05); }
+    .fb-label { display: block; font-size: .8rem; font-weight: 600; color: #39415a; margin-bottom: .35rem; }
+    .fb-input { width: 100%; border: 1px solid #d5dae3; border-radius: 9px; padding: .55rem .7rem; font-size: .9rem; box-sizing: border-box; background: #fff; }
+    .fb-input:focus { outline: 2px solid #3b6fe0; outline-offset: 1px; border-color: #3b6fe0; }
+    .fb-field { margin-bottom: .9rem; }
+    .fb-btn { background: #2f5cc6; color: #fff; border: 0; border-radius: 9px; padding: .6rem 1.1rem; font-size: .9rem; font-weight: 600; cursor: pointer; }
+    .fb-btn:disabled { opacity: .6; cursor: progress; }
+    .fb-msg { margin-top: .8rem; font-size: .85rem; border-radius: 9px; padding: .6rem .75rem; }
+    .fb-msg[data-state="success"] { background: #eaf7ee; color: #1c6b3c; border: 1px solid #bfe3cc; }
+    .fb-msg[data-state="error"] { background: #fdecec; color: #9b1c1c; border: 1px solid #f3c6c6; }
+    .fb-msg[data-state="info"] { background: #eef4ff; color: #25499e; border: 1px solid #c9dcff; }
+    .fb-msg:empty { display: none; }
+    .fb-sub { display: flex; gap: 1rem; padding: 1rem; border: 1px solid #e3e7ee; border-radius: 12px; background: #fbfcfe; margin-bottom: .9rem; }
+    .fb-sub img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; border: 1px solid #d5dae3; background: #eceef2; }
+    .fb-sub h3 { margin: 0 0 .15rem; font-size: 1rem; }
+    .fb-sub p { margin: .1rem 0; font-size: .82rem; color: #566; }
+    .fb-sub .fb-role { font-weight: 600; color: #39415a; }
+    .fb-empty { color: #6b7385; font-size: .9rem; padding: 1.5rem; text-align: center; border: 1px dashed #d5dae3; border-radius: 12px; }
+    .fb-hero { padding: 2.5rem 0 1rem; }
+    .fb-hero h1 { margin: 0 0 .5rem; font-size: 1.9rem; letter-spacing: .01em; }
+    .fb-hero p { margin: 0; color: #566; max-width: 60ch; line-height: 1.7; }
+    .fb-footer { border-top: 1px solid #e3e7ee; padding: 1.5rem 0 2.5rem; color: #6b7385; font-size: .8rem; }
+  </style>
+</head>
+<body class="bg-ink-50 text-ink-900">
+  <!-- ============================ 導覽列 ============================ -->
+  <header class="bg-white border-b border-ink-200 sticky top-0 z-10">
+    <div class="fb-shell fb-nav">
+      <a href="/" class="fb-brand text-ink-900">履歷問卷蒐集系統</a>
+      <nav class="fb-navlinks">
+        <a href="/" class="font-semibold text-brand-600">首頁</a>
+        <a href="/test-docs" id="nav-test-docs" data-testid="nav-test-docs">測試文件</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="fb-shell">
+    <!-- ============================ Hero ============================ -->
+    <section class="fb-hero">
+      <p class="text-xs font-semibold tracking-widest text-brand-600 uppercase mb-2">Resume Survey System</p>
+      <h1>收集履歷問卷，一鍵完成</h1>
+      <p>
+        填寫右方表單並上傳大頭照，系統會即時驗證格式並將資料寫入 SQLite。
+        左側卡片列表會在提交成功後動態更新，不需要重新整理頁面。
+      </p>
+    </section>
+
+    <div class="fb-grid">
+      <!-- ============================ 表單 ============================ -->
+      <section class="fb-card">
+        <h2 class="text-lg font-semibold mb-4">填寫履歷問卷</h2>
+
+        <form id="survey-form" enctype="multipart/form-data" novalidate>
+          <div class="fb-field">
+            <label class="fb-label" for="name">姓名 <span class="text-red-500">*</span></label>
+            <input class="fb-input" type="text" id="name" name="name" placeholder="王小明" required />
+          </div>
+
+          <div class="fb-field">
+            <label class="fb-label" for="email">電子郵件 <span class="text-red-500">*</span></label>
+            <input class="fb-input" type="email" id="email" name="email" placeholder="ming@example.com" required />
+          </div>
+
+          <div class="fb-field">
+            <label class="fb-label" for="role">應徵職位 <span class="text-red-500">*</span></label>
+            <input class="fb-input" type="text" id="role" name="role" placeholder="後端工程師" required />
+          </div>
+
+          <div class="fb-field">
+            <label class="fb-label" for="experience">年資（0 – 50 年） <span class="text-red-500">*</span></label>
+            <input class="fb-input" type="number" id="experience" name="experience_years" min="0" max="50" step="1" value="0" required />
+          </div>
+
+          <div class="fb-field">
+            <label class="fb-label" for="bio">簡歷與自我介紹</label>
+            <textarea class="fb-input" id="bio" name="bio" rows="4" placeholder="一句話描述你的專長與熱情…"></textarea>
+          </div>
+
+          <div class="fb-field">
+            <label class="fb-label" for="avatar">大頭照 <span class="text-red-500">*</span></label>
+            <input class="fb-input" type="file" id="avatar" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/*" required />
+            <p class="text-xs text-ink-700 mt-1">僅允許 .jpg / .jpeg / .png / .webp，檔名會自動改寫為安全的 UUID。</p>
+          </div>
+
+          <button class="fb-btn" type="submit" id="submit-btn" data-testid="submit-btn">送出履歷</button>
+          <div class="fb-msg" id="form-message" data-testid="form-message" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <!-- ============================ 卡片列表 ============================ -->
+      <section class="fb-card">
+        <div class="flex items-baseline justify-between mb-4">
+          <h2 class="text-lg font-semibold">已提交的履歷</h2>
+          <span class="text-xs text-ink-700" id="submission-count" data-testid="submission-count">0 筆</span>
+        </div>
+        <div id="submissions-list" data-testid="submissions-list">
+          <p class="fb-empty" id="empty-state" data-testid="empty-state">尚無任何履歷問卷提交紀錄。</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="bg-white">
+    <div class="fb-shell fb-footer">
+      FastAPI + SQLite3 + 原生 HTML/Tailwind · 附 Unit / Web API / E2E 三層自動化測試
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var form = document.getElementById("survey-form");
+      var listEl = document.getElementById("submissions-list");
+      var countEl = document.getElementById("submission-count");
+      var messageEl = document.getElementById("form-message");
+      var submitBtn = document.getElementById("submit-btn");
+      var submissions = [];
+
+      function escapeHtml(value) {
+        return String(value === null || value === undefined ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function showMessage(state, text) {
+        messageEl.dataset.state = state;
+        messageEl.textContent = text;
+      }
+
+      function renderCards() {
+        countEl.textContent = submissions.length + " 筆";
+
+        if (submissions.length === 0) {
+          listEl.innerHTML =
+            '<p class="fb-empty" id="empty-state" data-testid="empty-state">尚無任何履歷問卷提交紀錄。</p>';
+          return;
+        }
+
+        listEl.innerHTML = submissions
+          .map(function (item) {
+            var avatar = "/" + String(item.avatar_path || "").replace(/^\/+/, "");
+            return (
+              '<article class="fb-sub submission-card" data-testid="submission-card"' +
+              ' data-id="' + escapeHtml(item.id) + '"' +
+              ' data-name="' + escapeHtml(item.name) + '"' +
+              ' data-email="' + escapeHtml(item.email) + '"' +
+              ' data-role="' + escapeHtml(item.role) + '"' +
+              ' data-experience="' + escapeHtml(item.experience_years) + '">' +
+              '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(item.name) + ' 的大頭照" />' +
+              "<div>" +
+              "<h3>" + escapeHtml(item.name) + "</h3>" +
+              '<p class="fb-role">' + escapeHtml(item.role) + " · " + escapeHtml(item.experience_years) + " 年</p>" +
+              '<p><a href="mailto:' + escapeHtml(item.email) + '" class="text-brand-600">' + escapeHtml(item.email) + "</a></p>" +
+              "<p>" + escapeHtml(item.bio) + "</p>" +
+              '<p class="text-xs text-ink-700">提交時間：' + escapeHtml(item.created_at) + "</p>" +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("");
+      }
+
+      async function loadSubmissions() {
+        try {
+          var response = await fetch("/api/submissions");
+          if (!response.ok) { return; }
+          submissions = await response.json();
+          renderCards();
+        } catch (error) {
+          console.error("載入履歷列表失敗", error);
+        }
+      }
+
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        submitBtn.disabled = true;
+        showMessage("info", "提交中…");
+
+        try {
+          var response = await fetch("/api/submissions", {
+            method: "POST",
+            body: new FormData(form)
+          });
+
+          var payload = await response.json().catch(function () { return {}; });
+
+          if (!response.ok) {
+            var detail = payload.detail || "提交失敗，請稍後再試。";
+            showMessage("error", Array.isArray(detail) ? detail[0].msg : detail);
+            return;
+          }
+
+          submissions.unshift(payload);
+          renderCards();
+          form.reset();
+          showMessage("success", "已成功提交：" + payload.name);
+        } catch (error) {
+          showMessage("error", "網路錯誤，請稍後再試。");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      loadSubmissions();
+    })();
+  </script>
+</body>
+</html>

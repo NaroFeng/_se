@@ -1,0 +1,15 @@
+# 履歷問卷蒐集系統 (Resume Survey System) — 相依套件
+#
+# 安裝：
+#   python -m pip install -r requirements.txt
+#   python -m playwright install chromium   # E2E 測試需要瀏覽器
+
+# --- Web ---
+fastapi>=0.110
+uvicorn>=0.27
+python-multipart>=0.0.9
+
+# --- 測試 ---
+pytest>=8.0
+httpx>=0.27
+pytest-playwright>=0.4

@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>測試架構與案例說明 | 履歷問卷蒐集系統</title>
+  <meta name="description" content="履歷問卷蒐集系統的三層自動化測試：Unit、Web API、E2E 的測試邊界、案例對照表與執行指南。" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: { 50: '#f6f7f9', 100: '#eceef2', 200: '#d5dae3', 300: '#b9c1d0', 700: '#39415a', 900: '#171b26' },
+            brand: { 50: '#eef4ff', 100: '#d9e6ff', 500: '#3b6fe0', 600: '#2f5cc6', 700: '#25499e' }
+          },
+          fontFamily: { mono: ['ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'] }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: ui-sans-serif, system-ui, "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+    .shell { max-width: 1120px; margin: 0 auto; padding: 0 1rem; }
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #e3e7ee; }
+    .brand { font-weight: 700; font-size: 1.05rem; }
+    .navlinks { display: flex; gap: 1rem; font-size: .9rem; }
+    .navlinks a { color: #39415a; text-decoration: none; }
+    .navlinks a.active, .navlinks a:hover { color: #2f5cc6; font-weight: 600; }
+    .panel { background: #fff; border: 1px solid #e3e7ee; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 2px rgba(23,27,38,.05); }
+    .hero { padding: 2.75rem 0 1.5rem; }
+    .hero h1 { margin: .35rem 0 .6rem; font-size: 2rem; letter-spacing: .01em; }
+    .hero p { margin: 0; color: #566; max-width: 70ch; line-height: 1.75; }
+    .eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #2f5cc6; }
+    .section { padding: 1.5rem 0 .5rem; }
+    .section > h2 { font-size: 1.35rem; margin: 0 0 .35rem; }
+    .section > .lead { color: #566; font-size: .92rem; line-height: 1.75; margin: 0 0 1.25rem; max-width: 80ch; }
+    .pyramid { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    .layer { border-radius: 14px; padding: 1.1rem 1.25rem; border: 1px solid; }
+    .layer h3 { margin: 0 0 .1rem; font-size: 1rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .layer .tag { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: .12rem .5rem; border-radius: 999px; border: 1px solid currentColor; }
+    .layer dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem .9rem; margin: .7rem 0 0; font-size: .84rem; }
+    .layer dt { font-weight: 700; color: #39415a; }
+    .layer dd { margin: 0; color: #4b5566; }
+    .layer-e2e { background: #fdf3ec; border-color: #f3cba9; width: 100%; }
+    .layer-api { background: #eef4ff; border-color: #b8d0fb; width: 100%; }
+    .layer-unit { background: #ecfdf5; border-color: #a7e3c4; width: 100%; }
+    @media (min-width: 760px) {
+      .layer-e2e { width: 62%; }
+      .layer-api { width: 82%; }
+      .layer-unit { width: 100%; }
+    }
+    .tablewrap { overflow-x: auto; border: 1px solid #e3e7ee; border-radius: 12px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; min-width: 760px; }
+    thead th { background: #f6f7f9; text-align: left; font-weight: 700; color: #39415a; padding: .65rem .8rem; border-bottom: 1px solid #e3e7ee; white-space: nowrap; }
+    tbody td { padding: .65rem .8rem; border-bottom: 1px solid #eef0f4; vertical-align: top; color: #3f4657; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fbfcfe; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .82em; background: #f1f3f7; border-radius: 5px; padding: .1rem .35rem; color: #25499e; }
+    .fn { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .8rem; color: #171b26; font-weight: 600; }
+    .filetag { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .06em; padding: .12rem .5rem; border-radius: 6px; background: #eef4ff; color: #25499e; border: 1px solid #b8d0fb; }
+    .console { background: #171b26; color: #e6e9f0; border-radius: 12px; padding: 1rem 1.1rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .84rem; line-height: 1.85; overflow-x: auto; }
+    .console .c { color: #7dd3a0; }
+    .console .p { color: #7aa2f7; }
+    .console .note { color: #8b93a7; }
+    .grid2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 860px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+    .note { border-left: 3px solid #3b6fe0; background: #f6f9ff; padding: .8rem 1rem; border-radius: 0 10px 10px 0; font-size: .86rem; color: #3f4657; line-height: 1.75; }
+    .footer { border-top: 1px solid #e3e7ee; margin-top: 2.5rem; padding: 1.5rem 0 2.5rem; color: #6b7385; font-size: .8rem; }
+    .count { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .stat { display: inline-flex; flex-direction: column; align-items: center; padding: .55rem .95rem; border: 1px solid #e3e7ee; border-radius: 10px; background: #fff; }
+    .stat b { font-size: 1.15rem; line-height: 1.2; }
+    .stat span { font-size: .72rem; color: #6b7385; }
+
+    /* ===== 互動式測試控制台 ===== */
+    .consoletop {
+      border-radius: 16px; border: 1px solid #b8d0fb;
+      background: linear-gradient(135deg, #f6f9ff 0%, #eef4ff 55%, #fdf3ec 100%);
+      padding: 1.5rem;
+    }
+    .cmdgrid { display: grid; grid-template-columns: 1fr; gap: .9rem; margin-top: 1.25rem; }
+    @media (min-width: 900px) { .cmdgrid { grid-template-columns: 1fr 1fr; } }
+    .cmdcard { background: #fff; border: 1px solid #e3e7ee; border-radius: 12px; padding: 1rem 1.1rem; box-shadow: 0 1px 2px rgba(23,27,38,.04); }
+    .cmdcard-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .cmdcard h4 { margin: 0; font-size: .95rem; font-weight: 700; color: #171b26; }
+    .cmdcard p { margin: .45rem 0 .75rem; font-size: .82rem; color: #566; line-height: 1.7; }
+    .cmdblock { background: #171b26; color: #7dd3a0; border-radius: 9px; padding: .6rem .8rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .8rem; line-height: 1.7; overflow-x: auto; margin: 0; white-space: pre; }
+    .cmdblock code { background: none; padding: 0; color: inherit; font-size: inherit; }
+    .copybtn { border: 1px solid #b8d0fb; background: #eef4ff; color: #25499e; font-size: .75rem; font-weight: 700; border-radius: 8px; padding: .32rem .7rem; cursor: pointer; white-space: nowrap; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+    .copybtn:hover { background: #d9e6ff; }
+    .copybtn.copied { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .copybtn.failed { background: #fdecec; border-color: #f3c6c6; color: #9b1c1c; }
+
+    .runner { background: #fff; border: 1px solid #e3e7ee; border-radius: 14px; padding: 1.25rem; margin-top: 1.25rem; box-shadow: 0 1px 2px rgba(23,27,38,.04); }
+    .runner-btns { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .runbtn { border: 1px solid #d5dae3; background: #f6f7f9; color: #171b26; border-radius: 9px; padding: .52rem .9rem; font-size: .84rem; font-weight: 600; cursor: pointer; transition: all .15s ease; }
+    .runbtn:hover:not(:disabled) { background: #e9edf4; border-color: #b9c1d0; }
+    .runbtn:disabled { opacity: .45; cursor: not-allowed; }
+    .runbtn.primary { background: #2f5cc6; border-color: #2f5cc6; color: #fff; }
+    .runbtn.primary:hover:not(:disabled) { background: #25499e; border-color: #25499e; }
+    .runbtn.accent { background: #fdf3ec; border-color: #f3cba9; color: #8a4b16; }
+    .runbtn.accent:hover:not(:disabled) { background: #fbe6d4; border-color: #e8ae7c; }
+    .runner-status { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .badge { font-size: .8rem; font-weight: 700; padding: .3rem .75rem; border-radius: 999px; border: 1px solid; }
+    .badge.pass { background: #ecfdf5; border-color: #a7e3c4; color: #0f6b46; }
+    .badge.fail { background: #fdecec; border-color: #f3c6c6; color: #9b1c1c; }
+    .badge.info { background: #eef4ff; border-color: #b8d0fb; color: #25499e; }
+    .runmeta { font-size: .78rem; color: #6b7385; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; word-break: break-all; }
+    .loading { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; font-size: .85rem; color: #25499e; font-weight: 600; }
+    .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #b8d0fb; border-top-color: #2f5cc6; animation: spin .7s linear infinite; flex: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .terminal { background: #12151d; color: #d7dbe6; border-radius: 12px; padding: 1rem 1.1rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .78rem; line-height: 1.6; overflow: auto; max-height: 520px; margin: 1rem 0 0; white-space: pre-wrap; word-break: break-word; }
+    .terminal .ok { color: #7dd3a0; }
+    .terminal .err { color: #f87171; }
+    .terminal:empty::before { content: "尚未執行任何測試。點擊上方任一按鈕開始。"; color: #6b7385; }
+    .hint { font-size: .78rem; color: #6b7385; margin-top: .6rem; }
+  </style>
+</head>
+<body class="bg-ink-50 text-ink-900">
+  <!-- ============================ 導覽列 ============================ -->
+  <header class="bg-white border-b border-ink-200 sticky top-0 z-10">
+    <div class="shell nav">
+      <a href="/" class="brand text-ink-900">履歷問卷蒐集系統</a>
+      <nav class="navlinks">
+        <a href="/">首頁</a>
+        <a href="/test-docs" id="nav-test-docs" data-testid="nav-test-docs" class="active">測試文件</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <!-- ============================ Hero ============================ -->
+    <section class="hero">
+      <p class="eyebrow">Testing Documentation</p>
+      <h1 id="page-title" data-testid="page-title">測試架構與案例說明</h1>
+      <p>
+        本專案以「三層金字塔」構建自動化測試：最上層 <strong>E2E</strong> 驗證使用者旅程、中層
+        <strong>Web API</strong> 驗證 HTTP 合約與資料持久化、最下層 <strong>Unit</strong> 鎖定純業務規則。
+        每一層都有明確的測試邊界，愈上層愈昂貴、愈慢、但涵蓋面愈廣；愈下層愈輕快、執行愈快、錯誤回饋愈精準。
+      </p>
+      <div class="flex flex-wrap gap-3 mt-5">
+        <div class="stat"><b class="count">13</b><span>Unit 測試函式</span></div>
+        <div class="stat"><b class="count">21</b><span>Web API 測試函式</span></div>
+        <div class="stat"><b class="count">9</b><span>E2E 測試函式</span></div>
+        <div class="stat"><b class="count">97</b><span>參數化後收集到的案例</span></div>
+        <a class="stat" href="#console" style="text-decoration:none;color:inherit">
+          <b style="color:#2f5cc6">▶</b><span>前往互動式測試控制台</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============================ 1. 測試金字塔 ============================ -->
+    <section class="section" id="pyramid" data-testid="pyramid">
+      <h2>1. 測試金字塔架構</h2>
+      <p class="lead">
+        每一層標示三件事：<strong>測試邊界</strong>（測到哪裡為止）、<strong>是否依賴 DB / 網路</strong>（決定執行速度與穩定度）、
+        以及<strong>防護目標</strong>（這層擋下什麼類型的缺陷）。
+      </p>
+
+      <div class="pyramid">
+        <!-- E2E -->
+        <article class="layer layer-e2e" data-testid="layer-e2e">
+          <h3><span class="tag">Layer 3</span> E2E <span class="filetag">tests/test_e2e.py</span></h3>
+          <dl>
+            <dt>測試邊界</dt>
+            <dd>從瀏覽器網址列輸入到畫面重新渲染的<b>完整使用者旅程</b>：開首頁 → 填 6 個欄位 → 上傳圖片 → 送出 → 卡片動態出現 → 導航到測試文件頁。只驗證「使用者看得到的結果」，不檢查 DB 內部狀態。</dd>
+            <dt>依賴 DB / 網路</dt>
+            <dd>兩者都依賴：需要真實的 uvicorn HTTP Server + 真實 SQLite 檔案（放在 pytest 的 <code>tmp_path_factory</code> 下）。網路僅限 localhost，不連外。Chromium 由 Playwright 啟動。</dd>
+            <dt>防護目標</dt>
+            <dd>防護「前後端契約斷裂」：表單欄位名稱改錯、JS fetch 網址寫錯、卡片未渲染、導覽連結壞掉。這類問題單元測試與 API 測試都抓不到。</dd>
+            <dt>執行成本</dt>
+            <dd>最高（秒級），因此只保留 9 個關鍵旅程案例，數量最少、位於金字塔最尖端。</dd>
+          </dl>
+        </article>
+
+        <!-- API -->
+        <article class="layer layer-api" data-testid="layer-api">
+          <h3><span class="tag">Layer 2</span> Web API <span class="filetag">tests/test_api.py</span></h3>
+          <dl>
+            <dt>測試邊界</dt>
+            <dd>從 <code>POST /api/submissions</code> 的 multipart 請求進入 FastAPI，經過表單解析 → validators 驗證 → 檔案落地 → SQLite 寫入，直到 HTTP 回應（狀態碼 + JSON body）為止。以 <code>TestClient</code> 呼叫，無需佔用真實 TCP 埠。</dd>
+            <dt>依賴 DB / 網路</dt>
+            <dd>依賴 <b>真實 DB</b>（但不是正式環境的 <code>data/resume.db</code>，而是 fixture 傳入的 <code>tmp_path</code> 資料庫）；<b>不依賴外部網路</b>（TestClient 走 ASGI in-process，無 socket）。</dd>
+            <dt>防護目標</dt>
+            <dd>防護 HTTP 合約與資料層錯誤：狀態碼錯（400 應為 422）、驗證漏接、圖片沒落地、欄位沒寫進 DB、排序錯誤、惡意副檔名被放行。</dd>
+            <dt>執行成本</dt>
+            <dd>中等（毫秒級），共 21 個測試函式，專注於「請求 → 回應」這個契約邊界。</dd>
+          </dl>
+        </article>
+
+        <!-- Unit -->
+        <article class="layer layer-unit" data-testid="layer-unit">
+          <h3><span class="tag">Layer 1</span> Unit <span class="filetag">tests/test_unit.py</span></h3>
+          <dl>
+            <dt>測試邊界</dt>
+            <dd>只測 <code>app/validators.py</code> 的<b>純函式</b>：輸入字串 / 整數 → 輸出布林值或檔名字串。完全不碰 FastAPI、資料庫、檔案系統與網路。</dd>
+            <dt>依賴 DB / 網路</dt>
+            <dd>完全不依賴 DB 與網路。只需 <code>import app.validators</code>，整個測試檔可在毫秒內跑完，是最快速的一層。</dd>
+            <dt>防護目標</dt>
+            <dd>防護業務規則被改錯：Email 正則放行垃圾字串、年資邊界（0 / 50）判定錯、副檔名白名單被繞過、檔名未做 UUID 化而造成路徑穿越。</dd>
+            <dt>執行成本</dt>
+            <dd>最低（毫秒級），共 13 個測試函式（參數化後展開為 67 個案例），是金字塔的基石，也是回歸測試最常跑的一層。</dd>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================ 2. 互動式測試控制台 ============================ -->
+    <section class="section" id="console" data-testid="console">
+      <h2>2. 互動式測試控制台 (Interactive Test Console)</h2>
+      <p class="lead">
+        不用離開瀏覽器就能驗證這套系統：下方提供<b>一鍵複製指令</b>（把精確的 pytest 指令貼到你的終端機）
+        與<b>網頁即時測試執行器</b>（直接在頁面上點擊按鈕執行測試並即時觀看輸出）。
+      </p>
+
+      <!-- ---------- 2.1 Terminal 快速指令中心 ---------- -->
+      <div class="consoletop">
+        <h3 class="text-base font-semibold" id="cmd-center">2.1 Terminal 快速指令中心</h3>
+        <p class="text-sm text-ink-700 mt-1 mb-0 leading-relaxed">
+          全部指令皆使用 <code>python -m pytest</code> 前綴，避免多版本 Python 造成的套件版本衝突。
+          點擊右上角「複製指令」即可貼到終端機執行。
+        </p>
+
+        <div class="cmdgrid" id="cmd-grid">
+          <article class="cmdcard" data-testid="cmd-card">
+            <div class="cmdcard-head">
+              <h4>▶ 執行全部測試</h4>
+              <button class="copybtn" type="button" data-copy>複製指令</button>
+            </div>
+            <p>一次跑完 Unit、Web API、E2E 三層共 97 個測試案例，適合提交前的完整回歸。</p>
+            <pre class="cmdblock"><code>python -m pytest -v</code></pre>
+          </article>
+
+          <article class="cmdcard" data-testid="cmd-card">
+            <div class="cmdcard-head">
+              <h4>⚡ 僅跑單元測試</h4>
+              <button class="copybtn" type="button" data-copy>複製指令</button>
+            </div>
+            <p>只測 <code>app/validators.py</code> 的純函式，不碰 DB 與網路，數毫秒完成，是回歸測試最常跑的一層。</p>
+            <pre class="cmdblock"><code>python -m pytest tests/test_unit.py -v</code></pre>
+          </article>
+
+          <article class="cmdcard" data-testid="cmd-card">
+            <div class="cmdcard-head">
+              <h4>🌐 僅跑 API 測試</h4>
+              <button class="copybtn" type="button" data-copy>複製指令</button>
+            </div>
+            <p>用 FastAPI <code>TestClient</code> 驗證 HTTP 合約、狀態碼與資料持久化，走 ASGI in-process 不佔用真實 TCP 埠。</p>
+            <pre class="cmdblock"><code>python -m pytest tests/test_api.py -v</code></pre>
+          </article>
+
+          <article class="cmdcard" data-testid="cmd-card">
+            <div class="cmdcard-head">
+              <h4>👁️ 有頭慢動作觀看 E2E 自動填表</h4>
+              <button class="copybtn" type="button" data-copy>複製指令</button>
+            </div>
+            <p>
+              <b>你的桌面會真的彈出 Chromium 視窗</b>，以 500 毫秒慢動作親眼看到瀏覽器自動填表、上傳圖片、
+              送出並更新卡片列表，然後自動導航到本頁。
+            </p>
+            <pre class="cmdblock"><code>python -m pytest tests/test_e2e.py --headed --slowmo 500 -v</code></pre>
+          </article>
+
+          <article class="cmdcard" data-testid="cmd-card">
+            <div class="cmdcard-head">
+              <h4>🔍 開啟 Playwright Trace Viewer</h4>
+              <button class="copybtn" type="button" data-copy>複製指令</button>
+            </div>
+            <p>
+              先用 <code>--tracing=retain-on-failure</code> 在測試失敗時保留 trace（DOM snapshot、網路請求、截圖），
+              再開啟 Trace Viewer 就能像看影片一樣逐步回放，失敗時特別好用。
+              （<code>--tracing=on</code> 則是每次都保留，成功時較吃磁碟。）
+            </p>
+            <pre class="cmdblock"><code>python -m pytest tests/test_e2e.py --tracing=retain-on-failure -v
+python -m playwright show-trace test-results/</code></pre>
+          </article>
+
+          <article class="cmdcard" data-testid="cmd-card">
+            <div class="cmdcard-head">
+              <h4>🎯 只重跑上次失敗的案例</h4>
+              <button class="copybtn" type="button" data-copy>複製指令</button>
+            </div>
+            <p>
+              配合 <code>--lf</code>（last-failed）只重跑上次失敗的案例，並用 <code>-x</code> 在第一個錯誤就停下、
+              <code>--tb=long</code> 印出完整堆疊。開發節奏最好用的一條。
+            </p>
+            <pre class="cmdblock"><code>python -m pytest --lf -x --tb=long</code></pre>
+          </article>
+        </div>
+      </div>
+
+      <!-- ---------- 2.2 網頁即時測試執行器 ---------- -->
+      <h3 class="text-base font-semibold mt-8 mb-2" id="live-runner">2.2 網頁即時測試執行器 (Live Web Runner)</h3>
+      <p class="text-sm text-ink-700 mb-0 leading-relaxed">
+        直接在頁面上按按鈕執行測試，結果會像終端機一樣完整印在下方。
+        執行過程中伺服器會在背景開一個 <code>python -m pytest</code> 子行程，並把它的資料庫與上傳目錄指向一次性暫存資料夾，
+        因此<b>不會污染</b>正式的 <code>data/resume.db</code> 與 <code>uploads/</code>。
+      </p>
+
+      <div class="runner" id="runner" data-testid="runner">
+        <div class="runner-btns">
+          <button class="runbtn primary" type="button" data-suite="unit" data-testid="run-unit">▶ 跑單元測試</button>
+          <button class="runbtn primary" type="button" data-suite="api" data-testid="run-api">▶ 跑 API 測試</button>
+          <button class="runbtn primary" type="button" data-suite="e2e" data-testid="run-e2e">▶ 跑 E2E (背景)</button>
+          <button class="runbtn accent" type="button" data-suite="e2e_headed" data-testid="run-e2e-headed">👁️ 觀看 E2E 自動填表 (彈出視窗)</button>
+          <button class="runbtn" type="button" data-suite="all" data-testid="run-all">⚡ 執行全套測試</button>
+        </div>
+
+        <div class="loading" id="runner-loading" data-testid="runner-loading" hidden>
+          <span class="spinner" aria-hidden="true"></span>
+          <span>測試執行中...</span>
+        </div>
+
+        <div class="runner-status" id="runner-status" data-testid="runner-status" hidden>
+          <span class="badge" id="runner-badge" data-testid="runner-badge">—</span>
+          <span class="runmeta" id="runner-meta" data-testid="runner-meta"></span>
+        </div>
+
+        <pre class="terminal" id="terminal-output" data-testid="terminal-output"></pre>
+
+        <p class="hint">
+          提示：「👁️ 觀看 E2E 自動填表」會在你的桌面彈出真實的 Chromium 視窗（約需 20–40 秒）；
+          其餘按鈕皆在背景無聲執行。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================ 3. 案例對照表 ============================ -->
+    <section class="section" id="cases" data-testid="cases">
+      <h2>3. 測試案例對照表</h2>
+      <p class="lead">
+        下表列出三個測試檔中<b>實際撰寫</b>的測試函式名稱、測試輸入、預期輸出，以及該案例背後的驗證邏輯與設計理由。
+        全部合計 <span class="count">43</span> 個測試函式，參數化展開後共收集到 <span class="count">97</span> 個測試案例。
+      </p>
+
+      <div class="grid2 mb-6">
+        <div class="panel">
+          <p class="eyebrow">Layer 1 · Unit</p>
+          <h3 class="text-base font-semibold mt-1 mb-2">tests/test_unit.py</h3>
+          <p class="text-sm text-ink-700 leading-relaxed">
+            測試對象：<code>app/validators.py</code> 的 4 個純函式。<br />
+            執行指令：<code>pytest tests/test_unit.py -v</code><br />
+            預估耗時：&lt; 0.5 秒
+          </p>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Layer 2 + 3</p>
+          <h3 class="text-base font-semibold mt-1 mb-2">tests/test_api.py · tests/test_e2e.py</h3>
+          <p class="text-sm text-ink-700 leading-relaxed">
+            測試對象：HTTP 契約與瀏覽器旅程。<br />
+            執行指令：<code>pytest tests/test_api.py</code> / <code>pytest tests/test_e2e.py</code><br />
+            預估耗時：數秒 ~ 數十秒
+          </p>
+        </div>
+      </div>
+
+      <h3 class="text-base font-semibold mb-2">3.1 Unit — <span class="filetag">tests/test_unit.py</span></h3>
+      <div class="tablewrap mb-8">
+        <table data-testid="table-unit">
+          <thead>
+            <tr><th style="width:26%">測試函式</th><th style="width:26%">測試輸入 (Input)</th><th style="width:22%">預期輸出 (Expected)</th><th>背後驗證邏輯</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="fn">test_validate_email_accepts_valid_addresses</span></td>
+              <td><code>user@example.com</code>、<code>first.last@example.co.uk</code>、<code>user+tag@example.com</code>、<code>user_name@example-domain.com</code>、<code>USER@EXAMPLE.COM</code>、<code>a@b.co</code></td>
+              <td>全部 <code>True</code></td>
+              <td>參數化測試（Happy Path）。確認正則可接受本地部分的多種合法字元（<code>. _ % + -</code>）、多層網域、大寫字母，以及最短的合法網域。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_email_rejects_invalid_addresses</span></td>
+              <td><code>""</code>、<code>plainstring</code>、<code>no-at-sign.com</code>、<code>user@</code>、<code>@example.com</code>、<code>user@example</code>、<code>user @example.com</code>、<code>user@exam ple.com</code>、<code>user@@example.com</code>、<code>user@example.com.</code>、<code>user@.com</code>、<code>user@example.c</code>、<code>None</code>、<code>12345</code></td>
+              <td>全部 <code>False</code></td>
+              <td>Edge Cases。涵蓋缺 <code>@</code>、多 <code>@</code>、含空白、TLD 少於 2 碼、空網域標籤、型別錯誤。<code>None</code> / <code>12345</code> 用來確認函式不會拋例外。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_experience_accepts_range_boundaries</span></td>
+              <td><code>0</code>、<code>1</code>、<code>25</code>、<code>49</code>、<code>50</code></td>
+              <td>全部 <code>True</code></td>
+              <td>邊界測試。<code>0</code> 與 <code>50</code> 為規格定義的合法上下界（inclusive），這兩個值若被寫成 <code>&lt;</code> / <code>&gt;</code> 就會造成合法履歷被拒。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_experience_rejects_out_of_range_values</span></td>
+              <td><code>-1</code>、<code>-100</code>、<code>51</code>、<code>1000</code>、<code>99999</code></td>
+              <td>全部 <code>False</code></td>
+              <td>負數年資（業務上不可能）與超過 50 年（資料溢位風險）都必須被擋下，並由 API 層轉成 HTTP 400。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_experience_rejects_non_integer_values</span></td>
+              <td><code>"3"</code>、<code>3.5</code>、<code>None</code>、<code>True</code>、<code>False</code>、<code>[3]</code></td>
+              <td>全部 <code>False</code></td>
+              <td>型別安全。刻意排除 <code>bool</code>（<code>bool</code> 是 <code>int</code> 的子類別，<code>True</code> 會變成 1 而混進來）；字串與浮點數也拒絕，避免 <code>"3"</code>、<code>3.5</code> 年混進來。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_experience_boundaries_match_specification</span></td>
+              <td><code>MIN_EXPERIENCE</code>、<code>MAX_EXPERIENCE</code> 常數</td>
+              <td><code>(0, 50)</code></td>
+              <td>「規格守護」測試。直接斷言常數本身符合需求文件，避免日後有人調整常數卻忘記更新對應的測試與文件。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_image_extension_accepts_allowed_extensions</span></td>
+              <td><code>photo.jpg</code>、<code>photo.jpeg</code>、<code>photo.png</code>、<code>photo.webp</code>、<code>PHOTO.JPG</code>、<code>a.b.png</code>、<code>"  spaced.png  "</code></td>
+              <td>全部 <code>True</code></td>
+              <td>白名單命中。副檔名取「最後一個」且轉小寫比對，因此 <code>PHOTO.JPG</code>、多點的 <code>a.b.png</code> 與前後有空白的檔名都要能通過。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_image_extension_rejects_disallowed_extensions</span></td>
+              <td><code>virus.exe</code>、<code>script.sh</code>、<code>doc.pdf</code>、<code>archive.zip</code>、<code>noextension</code>、<code>photo.jpg.exe</code>、<code>photo.svg</code>、<code>""</code>、<code>None</code>、<code>123</code></td>
+              <td>全部 <code>False</code></td>
+              <td>惡意檔案攔截。<code>photo.jpg.exe</code> 是典型的雙副檔名繞過手法（真正副檔名是 <code>.exe</code>），必須以最後一段為準來判定。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_validate_image_extension_allowed_set</span></td>
+              <td><code>ALLOWED_IMAGE_EXTENSIONS</code> 常數</td>
+              <td>恰為 <code>{.jpg, .jpeg, .png, .webp}</code></td>
+              <td>白名單防護：確保沒有人未經檢討就把 <code>.svg</code> / <code>.gif</code> 等可攜 Script 的格式加進去。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_generate_safe_filename_preserves_extension</span></td>
+              <td><code>photo.png</code>、<code>photo.JPG</code>、<code>a.b.jpeg</code>、<code>photo.webp</code>、<code>noext</code></td>
+              <td>副檔名分別為 <code>.png</code>、<code>.jpg</code>、<code>.jpeg</code>、<code>.webp</code>、<code>.bin</code></td>
+              <td>確認「保留原副檔名」的語意：副檔名被轉小寫保留，原始檔名主體則被 UUID4 取代；沒有副檔名時以 <code>.bin</code> 兜底。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_generate_safe_filename_is_unique_per_call</span></td>
+              <td>同一個 <code>photo.png</code> 連續呼叫 2 次</td>
+              <td>兩次結果不同，皆符合 <code>[0-9a-f]{32}\.png</code></td>
+              <td>UUID4 唯一性保證不同使用者上傳同名檔案時不會互相覆蓋，是檔案落地策略的核心保證。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_generate_safe_filename_removes_directory_components</span></td>
+              <td><code>../../etc/passwd.png</code>、<code>C:\\Windows\\System32\\evil.exe</code>、<code>/etc/shadow.jpg</code></td>
+              <td>結果只剩 <code>&lt;uuid&gt;.&lt;原副檔名&gt;</code>，不含任何目錄分隔字元</td>
+              <td>路徑穿越防護。原始檔名的主體被完全替換掉，所以 <code>../</code> 片段自然失效——這是「白名單副檔名 + UUID 檔名」雙重防線的第二道。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_generate_safe_filename_handles_empty_input</span></td>
+              <td><code>""</code>、<code>None</code></td>
+              <td>皆回傳符合 <code>[0-9a-f]{32}\.bin</code> 的檔名</td>
+              <td>防禦性程式設計：空值輸入不得拋出例外（避免 500），而是以 <code>.bin</code> 安全兜底。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="text-base font-semibold mb-2">3.2 Web API — <span class="filetag">tests/test_api.py</span></h3>
+      <div class="tablewrap mb-8">
+        <table data-testid="table-api">
+          <thead>
+            <tr><th style="width:26%">測試函式</th><th style="width:26%">測試輸入 (Input)</th><th style="width:22%">預期輸出 (Expected)</th><th>背後驗證邏輯</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="fn">test_create_submission_returns_201_and_persists_record</span></td>
+              <td>完整 multipart：<code>name</code>、<code>email</code>、<code>role</code>、<code>experience_years=3</code>、<code>bio</code>、<code>avatar</code>（<code>io.BytesIO</code> 假 PNG）</td>
+              <td>HTTP <code>201</code>；JSON 含 <code>id</code>、<code>name</code>、<code>avatar_path</code>、<code>created_at</code></td>
+              <td>Happy Path。驗證 201 Created 的回應內容與實際寫入 DB 的列一致，確保 <code>avatar_path</code> 是相對於網站根目錄的路徑（<code>uploads/&lt;uuid&gt;.png</code>）。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_persists_record_into_database</span></td>
+              <td>送出一次合法表單後，直接讀取沙盒資料庫</td>
+              <td>資料表內有 1 筆，且 <code>name</code> 與 <code>experience_years=3</code> 正確</td>
+              <td>「真的 commit 了嗎」？POST 回 201 只能證明 API 願意回應，這個案例直接對 DB 下 SQL 驗證持久化。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_saves_avatar_into_upload_dir</span></td>
+              <td>同上，另指定 <code>tmp_path</code> 當作 upload 目錄</td>
+              <td><code>uploads/</code> 內確實存在檔案，內容位元組與上傳內容相同</td>
+              <td>確認「檔案真的落地」而不只是 DB 有紀錄。檔名為 UUID，故不會覆蓋既有檔案。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_generates_unique_filenames</span></td>
+              <td>連續 POST 兩筆，兩者使用<b>相同</b>檔名 <code>avatar.png</code></td>
+              <td>兩筆 <code>avatar_path</code> 不同，且 <code>uploads/</code> 內有 2 個檔案</td>
+              <td>驗證 UUID4 檔名策略的實際效益：使用者上傳同名檔案時不會互相覆蓋。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_rejects_invalid_email</span></td>
+              <td><code>email = "not-an-email"</code>，其餘欄位合法</td>
+              <td>HTTP <code>400</code>；<code>detail</code> 含「電子郵件」</td>
+              <td>驗證 API 層確實呼叫了 <code>validators.validate_email()</code>，且失敗時回傳 400（規格指定）而非 422。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_rejects_out_of_range_experience</span></td>
+              <td><code>experience_years = -1</code> 與 <code>51</code></td>
+              <td>HTTP <code>400</code>；<code>detail</code> 含「年資」</td>
+              <td>同一條規則的兩個方向（負數與超上限）都要被擋下，並且<b>不會</b>有任何資料寫進 DB。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_rejects_executable_file_extension</span></td>
+              <td><code>avatar</code> 檔名為 <code>malware.exe</code>，內容偽裝成 PNG</td>
+              <td>HTTP <code>400</code>；<code>detail</code> 含「僅允許」</td>
+              <td>「惡意檔案」測試。重點是<b>看副檔名</b>而不是看檔頭 magic bytes，因此偽裝內容也無效；同時驗證該檔案不會被寫進 <code>uploads/</code>。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_rejects_blank_name</span></td>
+              <td><code>name = "   "</code>（只有空白）</td>
+              <td>HTTP <code>400</code>；<code>detail</code> 含「姓名」</td>
+              <td>邊界值。空字串在瀏覽器端可能被 <code>required</code> 擋下，但 API 可能被 <code>curl</code> 直接呼叫，因此伺服器端仍需驗證。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_rejects_blank_role</span></td>
+              <td><code>role = "   "</code>（只有空白）</td>
+              <td>HTTP <code>400</code>；<code>detail</code> 含「職位」</td>
+              <td>與姓名相同的防呆規則，確保兩個必填欄位的處理一致。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_treats_empty_string_as_missing_field</span></td>
+              <td><code>name = ""</code>（完全空字串）</td>
+              <td>HTTP <code>422</code></td>
+              <td>釐清兩種失敗語意：<b>未提供</b>（空字串）由框架回 422，<b>提供了但內容無效</b>（空白、格式錯）由業務層回 400。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_create_submission_requires_avatar_file</span></td>
+              <td>完全不帶 <code>avatar</code> 欄位</td>
+              <td>HTTP <code>422</code></td>
+              <td>表單層級的必要欄位缺失交由 FastAPI/Pydantic 處理（422），與「格式錯誤但有值」的 400 區分開來，確保兩種失敗語意各自清晰。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_list_submissions_returns_empty_list_when_no_records</span></td>
+              <td>全新的空白測試資料庫</td>
+              <td>HTTP <code>200</code>；body 為 <code>[]</code></td>
+              <td>確認沒有資料時回傳空陣列而非 <code>null</code> 或 404，前端才能直接 <code>forEach</code> 渲染。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_list_submissions_returns_records_ordered_by_newest_first</span></td>
+              <td>連續 POST 兩筆（甲、乙）</td>
+              <td>HTTP <code>200</code>；陣列第一筆是乙、第二筆是甲</td>
+              <td>排序契約。<code>ORDER BY id DESC</code> 讓新提交永遠出現在列表最上方，讓首頁的卡片體驗符合直覺。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_submit_then_list_returns_the_new_record</span></td>
+              <td>先 POST 一筆，再 GET <code>/api/submissions</code></td>
+              <td>GET 回傳陣列長度為 1，且 <code>name</code> 與 POST 的輸入一致</td>
+              <td>端到端的 API 回合驗證（限 API 層）：確認 POST 有真的 commit 到 DB，而不是只寫在記憶體。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_index_page_is_served</span></td>
+              <td>GET <code>/</code></td>
+              <td>HTTP <code>200</code>；回應內容含 <code>survey-form</code></td>
+              <td>路由層的 smoke test：確認首頁靜態檔案被正確掛載，且回傳的是表單頁而不是 404。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_test_docs_page_is_served</span></td>
+              <td>GET <code>/test-docs</code></td>
+              <td>HTTP <code>200</code>；回應內容含「測試架構與案例說明」</td>
+              <td>確認第二個頁面的路由與檔案命名都正確，避免導覽列連結到空白頁。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_run_tests_executes_unit_suite</span></td>
+              <td>POST <code>/api/run-tests</code>，body <code>{"suite": "unit"}</code></td>
+              <td>HTTP <code>200</code>；<code>returncode == 0</code>、<code>passed == true</code>、<code>stdout</code> 含「passed」</td>
+              <td>互動式控制台的核心驗證。刻意只跑最輕的 Unit 套件（約 1 秒），證明端點真的會啟動 pytest 子行程，卻不會拖慢整個測試流程。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_run_tests_does_not_pollute_production_storage</span></td>
+              <td>執行一次 <code>{"suite": "unit"}</code> 後檢查沙盒 DB 與上傳目錄</td>
+              <td>上傳目錄為空、資料表 0 筆</td>
+              <td>最關鍵的防呆：測試執行器必須把子行程的 <code>RESUME_DB_PATH</code> / <code>RESUME_UPLOAD_DIR</code> 指向一次性暫存資料夾，<b>絕對不能</b>寫入正式的 <code>data/resume.db</code> 與 <code>uploads/</code>。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_run_tests_rejects_unknown_suite</span></td>
+              <td>body <code>{"suite": "not-a-suite"}</code></td>
+              <td>HTTP <code>422</code></td>
+              <td>套件名稱以 <code>Literal</code> 型別限定，只接受 <code>unit/api/e2e/e2e_headed/all</code>，任何其他值直接被框架擋下，無法拼出任意指令。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_run_tests_suite_mapping_is_complete</span></td>
+              <td>直接檢查 <code>TEST_SUITE_ARGS</code> 常數</td>
+              <td>五個 suite 的 pytest 參數完全符合規格</td>
+              <td>純資料斷言，不實際執行。特別驗證 <code>e2e_headed</code> 必須帶上 <code>--headed --slowmo 500</code> 兩個選項，否則網頁按鈕就不會真的彈出 Chromium。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_run_tests_rejects_nested_execution</span></td>
+              <td>先設好環境變數 <code>RESUME_RUN_TESTS_ACTIVE=1</code> 再呼叫端點</td>
+              <td>HTTP <code>409</code>；<code>detail</code> 含「巢狀」</td>
+              <td>防止無限遞迴的最後一道防線：若目前行程本身就是被 <code>/api/run-tests</code> 啟動的子行程，就拒絕再跑一次，否則「執行全部測試」會變成測試→測試→測試的無盡循環。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="text-base font-semibold mb-2">3.3 E2E — <span class="filetag">tests/test_e2e.py</span></h3>
+      <div class="tablewrap mb-8">
+        <table data-testid="table-e2e">
+          <thead>
+            <tr><th style="width:26%">測試函式</th><th style="width:26%">測試輸入 (Input)</th><th style="width:22%">預期輸出 (Expected)</th><th>背後驗證邏輯</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="fn">test_home_page_renders_form_fields</span></td>
+              <td>開啟 <code>GET /</code></td>
+              <td>表單 6 個欄位（name / email / role / experience / bio / avatar）、送出按鈕與列表容器皆可見；計數文字與卡片數量一致</td>
+              <td>旅程起點。先確認頁面本身有渲染，才有意義去測後續互動；這是「先確認插座有電」的 smoke check。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_submit_form_inserts_new_card_into_list</span></td>
+              <td>填寫全部欄位 + 上傳程式產生的 8×8 PNG，點擊「送出履歷」</td>
+              <td>卡片數量 <b>＋1</b>；新卡片含姓名、Email、職位與「5 年」；大頭照 <code>src</code> 指向 <code>/uploads/…</code> 且圖片真的載入（<code>naturalWidth &gt; 0</code>）</td>
+              <td>核心旅程。斷言「數量增加 1」而非固定數字，讓測試在共享的 session server 下仍然穩定；同時驗證 JS 收到 API 回應後<b>動態</b>重繪列表（沒有整頁重新載入）。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_submit_form_shows_error_message_for_invalid_email</span></td>
+              <td><code>email = "bad-email"</code>，其餘合法並照常上傳圖片</td>
+              <td>顯示錯誤訊息（<code>data-state="error"</code>）且<b>沒有</b>新增任何卡片</td>
+              <td>失敗路徑。表單刻意加上 <code>novalidate</code>，繞過瀏覽器內建的 <code>type="email"</code> 檢查，讓真正的 API 請求送出去，才能驗證 400 從伺服器一路傳回畫面。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_navigate_to_test_docs_page_shows_expected_title</span></td>
+              <td>在首頁點擊導覽列「測試文件」</td>
+              <td>網址變為 <code>/test-docs</code>；<code>#page-title</code> 文字為「測試架構與案例說明」</td>
+              <td>驗證跨頁導覽連結與第二個靜態頁面的掛載路由都正常——純前端路由錯誤（例如連結指到 <code>/docs</code>）只有瀏覽器測試抓得到。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_test_docs_page_contains_three_test_layers</span></td>
+              <td>開啟 <code>/test-docs</code></td>
+              <td>頁面含 Unit / Web API / E2E 三層卡片、三張案例對照表與三條執行指令</td>
+              <td>「文件也要被測試」。避免說明頁與實作脫節（改了測試卻忘了更新對照表），這是本專案的自我保護機制。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_test_docs_page_has_interactive_console</span></td>
+              <td>開啟 <code>/test-docs</code></td>
+              <td>6 張指令卡片、6 個複製按鈕、5 個執行按鈕；每張卡片的指令都以 <code>python -m pytest</code> 開頭</td>
+              <td>驗證互動控制台的<b>結構完整性</b>，並守住「一律使用 <code>python -m pytest</code> 前綴」這條規則（避免多版本 Python 的套件衝突）。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_copy_command_button_copies_to_clipboard</span></td>
+              <td>點擊第一張卡片的「複製指令」按鈕</td>
+              <td>按鈕文字變為「✓ 已複製！」並加上 <code>copied</code> 樣式；剪貼簿內容為 <code>python -m pytest -v</code>；1.8 秒後按鈕復原</td>
+              <td>「一鍵複製」的人性化功能必須真的能用。用 <code>context.grant_permissions()</code> 授予剪貼簿權限後直接讀取 <code>navigator.clipboard.readText()</code> 驗證內容，而不是只檢查按鈕文字。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_live_runner_executes_unit_suite_from_the_page</span></td>
+              <td>點擊「▶ 跑單元測試」按鈕</td>
+              <td>loading 狀態確實出現過；最外層執行時徽章為「✓ 全數通過」且輸出含 pytest 成功結果；巢狀執行時顯示紅燈並印出守門原因；按鈕最後恢復可用</td>
+              <td>核心互動旅程。斷言 loading → 徽章 → 輸出 → 按鈕復原的<b>完整狀態流</b>，確保按鈕不會在測試結束後卡死。loading 用 <code>MutationObserver</code> 記錄「曾經顯示過」，避開巢狀情境下 409 秒回造成的競態。</td>
+            </tr>
+            <tr>
+              <td><span class="fn">test_live_runner_reports_failure_for_invalid_suite</span></td>
+              <td>送出未知的 suite 名稱</td>
+              <td>HTTP <code>422</code></td>
+              <td>失敗路徑。確認後端不會對未知套件名稱傻傻地回傳「成功」，前端因此才能正確顯示紅燈徽章。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note mb-8" data-testid="note-isolation">
+        <strong>為什麼 API 測試要用「獨立的測試 DB」與「Mock 圖片」？</strong><br />
+        ① <b>避免污染正式資料</b>：正式環境的 <code>data/resume.db</code> 與 <code>uploads/</code> 是使用者資料。若測試直接寫入，會造成資料錯亂，而且測試結果會受既有資料影響而不可重現。因此 <code>conftest.py</code> 以 fixture 傳入 <code>tmp_path</code> 底下的資料庫與上傳目錄，每個測試案例都是全新且互不干擾的沙盒。<br />
+        ② <b>避免依賴真實檔案</b>：Mock 圖片用 <code>io.BytesIO</code> 與 <code>zlib</code> 產生合法的 PNG 位元組，不需要在 repo 內放二進位測試素材，測試檔保持純文字、可 diff、也方便閱讀。<br />
+        ③ <b>避免依賴外部網路</b>：<code>TestClient</code> 走 ASGI in-process 呼叫，<code>localhost</code> 以外一律不連；E2E 也只啟動本機 uvicorn。因此整套測試可<b>離線</b>、<b>可重複</b>、<b>無副作用</b>地執行。
+      </div>
+    </section>
+
+    <!-- ============================ 3. 執行指南 ============================ -->
+    <section class="section" id="howto" data-testid="howto">
+      <h2>4. 執行指南</h2>
+      <p class="lead">在專案根目錄（<code>resume-survey-app/</code>）下開啟終端機，依需求選擇要執行哪一層測試。</p>
+
+      <div class="grid2 mb-6">
+        <div>
+          <h3 class="text-sm font-semibold mb-2">安裝依賴</h3>
+          <pre class="console"><span class="c">$</span> <span class="p">python</span> -m pip install -r requirements.txt
+<span class="c">$</span> <span class="p">python</span> -m playwright install chromium</pre>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold mb-2">啟動本機服務（選用）</h3>
+          <pre class="console"><span class="c">$</span> <span class="p">python</span> -m uvicorn app.main:app --reload
+<span class="note"># http://127.0.0.1:8000</span></pre>
+        </div>
+      </div>
+
+      <h3 class="text-base font-semibold mb-2">4.1 一次跑完三層測試</h3>
+      <pre class="console mb-6"><span class="c">$</span> <span class="p">python</span> -m pytest -v</pre>
+
+      <h3 class="text-base font-semibold mb-2">4.2 分層執行</h3>
+      <pre class="console mb-6"><span class="c"># Layer 1 — Unit（最快，數毫秒）</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest tests/test_unit.py -v
+
+<span class="c"># Layer 2 — Web API（毫秒級）</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest tests/test_api.py -v
+
+<span class="c"># Layer 3 — E2E（秒級，需 Chromium）</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest tests/test_e2e.py -v
+
+<span class="c"># Layer 3 — 有頭慢動作（桌面會彈出 Chromium 視窗）</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest tests/test_e2e.py --headed --slowmo 500 -v</pre>
+
+      <h3 class="text-base font-semibold mb-2">4.3 常用組合</h3>
+      <pre class="console mb-6"><span class="c"># 只跑單元 + API（CI 的快速守門）</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest tests/test_unit.py tests/test_api.py -v
+
+<span class="c"># 只跑某個測試函式</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest tests/test_unit.py::test_validate_email_rejects_invalid_addresses -v
+
+<span class="c"># 顯示 print 與失敗細節</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest -vv -s --tb=short
+
+<span class="c"># 只重跑上次失敗的案例</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest --lf -x --tb=long
+
+<span class="c"># 產生覆蓋率報告</span>
+<span class="c">$</span> <span class="p">python</span> -m pytest --cov=app --cov-report=term-missing</pre>
+
+      <h3 class="text-base font-semibold mb-2">4.4 測試隔離說明</h3>
+      <pre class="console mb-6"><span class="note"># conftest.py 透過 tmp_path / tmp_path_factory 建立沙盒，</span>
+<span class="note"># 測試期間完全不會碰到正式環境的 data/resume.db 與 uploads/。</span>
+<span class="note">#</span>
+<span class="note">#   db_path    -> tmp_path / "data" / "resume.db"</span>
+<span class="note">#   upload_dir -> tmp_path / "uploads"</span>
+<span class="note">#   E2E server -> tmp_path_factory 底下的獨立 uvicorn 子行程</span>
+<span class="note">#                (以 RESUME_DB_PATH / RESUME_UPLOAD_DIR 環境變數指向沙盒)</span>
+<span class="note">#</span>
+<span class="note"># 網頁執行器 POST /api/run-tests 另外再包一層：</span>
+<span class="note">#   子行程的 RESUME_DB_PATH / RESUME_UPLOAD_DIR 會被覆寫成</span>
+<span class="note">#   tempfile.TemporaryDirectory() 底下的一次性資料夾，執行完即刪除。</span>
+<span class="note">#   另外以 RESUME_RUN_TESTS_ACTIVE 標記子行程，避免測試再觸發測試。</span></pre>
+    </section>
+  </main>
+
+  <footer class="bg-white">
+    <div class="shell footer">
+      履歷問卷蒐集系統 · 測試文件頁 · Unit / Web API / E2E 共 43 個測試函式 · FastAPI + SQLite3 + Playwright
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ================================================================
+      // 1. 一鍵複製指令（Terminal 快速指令中心）
+      // ================================================================
+      var COPY_RESET_MS = 1800;
+
+      function fallbackCopy(text) {
+        var textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.top = "-1000px";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        var ok = false;
+        try {
+          ok = document.execCommand("copy");
+        } catch (error) {
+          ok = false;
+        }
+        document.body.removeChild(textarea);
+        return ok;
+      }
+
+      function copyText(text) {
+        // 優先使用 navigator.clipboard.writeText()；在非 secure context
+        // （例如用區網 IP 走 http 開啟）自動退回 execCommand。
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text).then(
+            function () {
+              return true;
+            },
+            function () {
+              return fallbackCopy(text);
+            }
+          );
+        }
+        return Promise.resolve(fallbackCopy(text));
+      }
+
+      function flashButton(button, ok) {
+        var original = button.getAttribute("data-label") || button.textContent;
+        button.setAttribute("data-label", original);
+        button.textContent = ok ? "✓ 已複製！" : "複製失敗";
+        button.classList.remove("copied", "failed");
+        button.classList.add(ok ? "copied" : "failed");
+
+        window.clearTimeout(button._resetTimer);
+        button._resetTimer = window.setTimeout(function () {
+          button.textContent = button.getAttribute("data-label");
+          button.classList.remove("copied", "failed");
+        }, COPY_RESET_MS);
+      }
+
+      document.querySelectorAll("[data-copy]").forEach(function (button) {
+        var card = button.closest(".cmdcard");
+        var source = card ? card.querySelector(".cmdblock") : null;
+        if (!source) {
+          return;
+        }
+
+        button.addEventListener("click", function () {
+          var command = source.textContent.trim();
+          copyText(command).then(function (ok) {
+            flashButton(button, ok);
+          });
+        });
+      });
+
+      // ================================================================
+      // 2. 網頁即時測試執行器 (Live Web Runner)
+      // ================================================================
+      var runButtons = Array.prototype.slice.call(
+        document.querySelectorAll("[data-suite]")
+      );
+      var loadingEl = document.getElementById("runner-loading");
+      var statusEl = document.getElementById("runner-status");
+      var badgeEl = document.getElementById("runner-badge");
+      var metaEl = document.getElementById("runner-meta");
+      var outputEl = document.getElementById("terminal-output");
+
+      function setBusy(busy) {
+        runButtons.forEach(function (button) {
+          button.disabled = busy;
+        });
+        loadingEl.hidden = !busy;
+      }
+
+      function showBadge(kind, text) {
+        badgeEl.className = "badge " + kind;
+        badgeEl.textContent = text;
+        statusEl.hidden = false;
+      }
+
+      function appendOutput(text) {
+        outputEl.textContent += text;
+        outputEl.scrollTop = outputEl.scrollHeight;
+      }
+
+      function runSuite(suite) {
+        setBusy(true);
+        statusEl.hidden = true;
+        outputEl.textContent = "";
+
+        fetch("/api/run-tests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ suite: suite })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              return { ok: response.ok, status: response.status, data: data };
+            });
+          })
+          .then(function (result) {
+            var data = result.data || {};
+
+            if (!result.ok) {
+              var reason = data.detail || "HTTP " + result.status;
+              showBadge("fail", "⚠ 執行失敗");
+              metaEl.textContent = "suite=" + suite + " · " + reason;
+              appendOutput("[ERROR] " + reason + "\n");
+              return;
+            }
+
+            if (data.passed) {
+              showBadge("pass", "✓ 全數通過");
+            } else {
+              showBadge("fail", "✗ 測試失敗 (exit " + data.returncode + ")");
+            }
+
+            metaEl.textContent =
+              "耗時 " +
+              data.duration_seconds +
+              " 秒 · " +
+              (data.command || "") +
+              (data.timed_out ? " · [逾時中止]" : "");
+
+            if (data.stdout) {
+              appendOutput(data.stdout);
+            }
+            if (data.stderr && data.stderr.trim()) {
+              appendOutput("\n----- stderr -----\n" + data.stderr + "\n");
+            }
+          })
+          .catch(function (error) {
+            showBadge("fail", "⚠ 執行失敗");
+            metaEl.textContent = "suite=" + suite;
+            appendOutput("[ERROR] " + error + "\n");
+          })
+          .finally(function () {
+            setBusy(false);
+          });
+      }
+
+      runButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          runSuite(button.getAttribute("data-suite"));
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

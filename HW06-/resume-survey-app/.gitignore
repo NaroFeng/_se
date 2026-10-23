@@ -1,0 +1,14 @@
+# 資料庫與使用者上傳檔案不進版控
+data/*.db
+data/*.db-journal
+uploads/*
+!uploads/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Playwright 測試產物（trace / screenshot）
+test-results/
+playwright-report/
