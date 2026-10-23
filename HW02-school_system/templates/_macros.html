@@ -1,0 +1,46 @@
+{# Server-side sidebar renderer (progressive enhancement).
+   If JS fails, users still see the full menu. Client-side JS will take over
+   for search/highlight/state behaviour. #}
+{% macro render_sidebar(nodes, depth=0) %}
+  {% if depth == 0 %}
+  <ul class="menu-tree" role="tree" data-server-rendered="true">
+  {% else %}
+  <ul class="menu-children" role="group">
+  {% endif %}
+    {% for node in nodes %}
+      <li class="menu-node" role="treeitem" data-node-id="{{ node.id }}">
+        {% if node.children and not node.route %}
+          <button class="menu-toggle" type="button" aria-expanded="true">
+            <span class="menu-caret" aria-hidden="true">▶</span>
+            <span class="menu-icon" aria-hidden="true">{{ {
+              'home':'🏠','megaphone':'📣','book':'📚','grade':'🏆','tools':'🛠️','shield':'🛡️',
+              'doc':'📄','list':'📋','search':'🔍','calendar':'📅','trophy':'🏅','edit':'✏️',
+              'menu':'🧭','user':'👤','course':'🎓','add':'➕','plus':'✚','minus':'➖',
+              'result':'📊','stop':'🛑','general':'📚','manual':'✍️','over':'⬆️','under':'⬇️',
+              'program':'📘','warning':'⚠️','history':'🕓','waiver':'🔁','info':'ℹ️',
+              'plan':'🗺️','teacher':'👨‍🏫','room':'🏫','class':'👥','audit':'✅','reply':'↩️',
+              'leave':'🚪','cross':'🔀','micro':'🔬','minor':'🎭','affairs':'🏛️',
+              'attendance':'📅','reward':'🏅','money':'💰','army':'🪖','people':'👥'
+            }.get(node.icon or '', '•') }}</span>
+            <span class="menu-label">{{ node.label }}</span>
+          </button>
+          {{ render_sidebar(node.children, depth + 1) }}
+        {% else %}
+          <a class="menu-link" href="{{ node.route or '#' }}" data-route="{{ node.route or '' }}">
+            <span class="menu-icon" aria-hidden="true">{{ {
+              'home':'🏠','megaphone':'📣','book':'📚','grade':'🏆','tools':'🛠️','shield':'🛡️',
+              'doc':'📄','list':'📋','search':'🔍','calendar':'📅','trophy':'🏅','edit':'✏️',
+              'menu':'🧭','user':'👤','course':'🎓','add':'➕','plus':'✚','minus':'➖',
+              'result':'📊','stop':'🛑','general':'📚','manual':'✍️','over':'⬆️','under':'⬇️',
+              'program':'📘','warning':'⚠️','history':'🕓','waiver':'🔁','info':'ℹ️',
+              'plan':'🗺️','teacher':'👨‍🏫','room':'🏫','class':'👥','audit':'✅','reply':'↩️',
+              'leave':'🚪','cross':'🔀','micro':'🔬','minor':'🎭','affairs':'🏛️',
+              'attendance':'📅','reward':'🏅','money':'💰','army':'🪖','people':'👥'
+            }.get(node.icon or '', '•') }}</span>
+            <span class="menu-label">{{ node.label }}</span>
+          </a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}

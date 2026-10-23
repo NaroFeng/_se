@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{{ school_name }} {{ system_name }}{% endblock %}
+{% block body %}
+<div class="app-shell" id="app-shell">
+  <aside class="sidebar" id="sidebar" data-collapsed="false">
+    <div class="sidebar-header">
+      <img class="sidebar-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="校徽" />
+      <div class="sidebar-title">
+        <strong>{{ school_name }}</strong>
+        <span>{{ system_name }}</span>
+      </div>
+    </div>
+    <div class="sidebar-search">
+      <input type="search" id="sidebar-search" placeholder="搜尋選單..." autocomplete="off" />
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav" aria-label="主選單">
+      {{ ui.render_sidebar(menu_tree) }}
+    </nav>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div class="header-left">
+        <img class="header-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="{{ school_name }} 校徽" />
+        <div class="header-title">
+          <strong>{{ school_name }}</strong>
+          <span>{{ system_name }}</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <button class="btn btn-ghost" id="change-password-btn" type="button">修改密碼</button>
+        <button class="btn btn-ghost" id="toggle-sidebar-btn" type="button" data-action="hide">隱藏選單</button>
+      </div>
+      <div class="header-right">
+        <span class="semester-label">{{ semester_label }}</span>
+        <span class="user-info">
+          {% if user %}
+            {{ user.department or '' }}{% if user.class_name %}／{{ user.class_name }}{% endif %}／{{ user.display_name }}
+          {% endif %}
+        </span>
+        <form method="post" action="/api/auth/logout" id="logout-form">
+          <button class="btn btn-outline" type="submit">登出</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="app-content" id="app-content">
+      <div data-page="home" class="content-placeholder">
+        <p class="muted">載入中…</p>
+      </div>
+    </main>
+  </div>
+
+  <dialog class="modal" id="change-password-modal" data-modal="change-password">
+    <form method="dialog" class="modal-card">
+      <header class="modal-header">
+        <h2>修改密碼</h2>
+        <button class="modal-close" value="cancel" aria-label="關閉">×</button>
+      </header>
+      <div class="modal-body">
+        <label>
+          <span>舊密碼</span>
+          <input type="password" name="old_password" required autocomplete="current-password" />
+        </label>
+        <label>
+          <span>新密碼</span>
+          <input type="password" name="new_password" required minlength="4" autocomplete="new-password" />
+        </label>
+        <label>
+          <span>確認新密碼</span>
+          <input type="password" name="confirm_password" required minlength="4" autocomplete="new-password" />
+        </label>
+        <p class="modal-error" data-role="error" hidden></p>
+      </div>
+      <footer class="modal-footer">
+        <button value="cancel" class="btn btn-ghost">取消</button>
+        <button value="confirm" class="btn btn-primary" id="change-password-submit">確認修改</button>
+      </footer>
+    </form>
+  </dialog>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+[submodule "HW04-github/git-examples"]
+	path = HW04-github/git-examples
+	url = https://github.com/se-111410545/git-examples.git
+[submodule "HW04-github/my-fork-examples"]
+	path = HW04-github/my-fork-examples
+	url = https://github.com/NaroFeng/git-examples.git

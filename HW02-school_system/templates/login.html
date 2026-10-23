@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}登入 — {{ system_name }}{% endblock %}
+{% block body %}
+<main class="login-page">
+  <section class="login-card">
+    <img class="login-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="{{ school_name }} 校徽" />
+    <h1>{{ school_name }} {{ system_name }}</h1>
+    <p class="login-subtitle">請輸入您的校務帳號密碼登入</p>
+    <form id="login-form" class="login-form" method="post" action="/login">
+      <label>
+        <span>帳號 / 學號 / 信箱</span>
+        <input name="username" autocomplete="username" required value="{{ login_username or '' }}"
+               placeholder="例如：s114210501 / 114210501 / s114210501@nqu.edu.tw" />
+      </label>
+      <label>
+        <span>密碼</span>
+        <input name="password" type="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn btn-primary">登入</button>
+      <p class="login-hint">
+        預設帳號：<code>s114210501 / pass1234</code>（學生，Email: <code>s114210501@nqu.edu.tw</code>）、
+        <code>admin / admin1234</code>（管理員，Email: <code>admin@nqu.edu.tw</code>）
+      </p>
+      {% if login_error %}
+        <p class="login-error" data-role="error">{{ login_error }}</p>
+      {% else %}
+        <p class="login-error" data-role="error" hidden></p>
+      {% endif %}
+    </form>
+  </section>
+</main>
+<script type="module" src="{{ url_for('static', filename='js/pages/login.js') }}"></script>
+{% endblock %}

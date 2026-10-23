@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SynapseBrain 執行期產物（實際綁定的 port、本機資料庫）
+HW03-/synapse-brain/.port
+HW03-/synapse-brain/synapse.db

@@ -1,0 +1,19 @@
+{
+  "name": "hw02-school_system",
+  "version": "1.0.0",
+  "description": "現代軟體工程 HW2 — NKU 校務資訊系統 (Flask + Vanilla JS)",
+  "private": true,
+  "scripts": {
+    "test:e2e": "node --test tests/e2e/*.spec.mjs",
+    "test:e2e:headed": "set HEADED=1&& set SLOWMO=80&& node --test tests/e2e/*.spec.mjs",
+    "test:e2e:01-login": "node --test tests/e2e/01-login-home.spec.mjs",
+    "test:e2e:02-sidebar": "node --test tests/e2e/02-sidebar-router.spec.mjs",
+    "test:e2e:03-announcements": "node --test tests/e2e/03-announcements.spec.mjs",
+    "test:e2e:04-users": "node --test tests/e2e/04-users-admin.spec.mjs",
+    "test:e2e:05-password": "node --test tests/e2e/05-change-password-logout.spec.mjs",
+    "test:e2e:check": "node --check tests/e2e/helpers/server.mjs && node --check tests/e2e/helpers/selectors.mjs && node --check tests/e2e/helpers/fixtures.mjs && node --check tests/e2e/01-login-home.spec.mjs && node --check tests/e2e/02-sidebar-router.spec.mjs && node --check tests/e2e/03-announcements.spec.mjs && node --check tests/e2e/04-users-admin.spec.mjs && node --check tests/e2e/05-change-password-logout.spec.mjs && echo all-syntax-ok"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

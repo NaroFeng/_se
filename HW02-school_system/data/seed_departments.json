@@ -1,0 +1,18 @@
+[
+  { "code": "CS",   "name": "資訊工程學系",         "short_name": "資工",   "sort_order": 1 },
+  { "code": "EE",   "name": "電機工程學系",         "short_name": "電機",   "sort_order": 2 },
+  { "code": "ME",   "name": "機械工程學系",         "short_name": "機械",   "sort_order": 3 },
+  { "code": "CE",   "name": "土木工程學系",         "short_name": "土木",   "sort_order": 4 },
+  { "code": "BA",   "name": "企業管理學系",         "short_name": "企管",   "sort_order": 5 },
+  { "code": "AC",   "name": "會計學系",             "short_name": "會計",   "sort_order": 6 },
+  { "code": "FN",   "name": "財務金融學系",         "short_name": "財金",   "sort_order": 7 },
+  { "code": "EC",   "name": "經濟學系",             "short_name": "經濟",   "sort_order": 8 },
+  { "code": "LA",   "name": "法律學系",             "short_name": "法律",   "sort_order": 9 },
+  { "code": "FL",   "name": "外國語文學系",         "short_name": "外文",   "sort_order": 10 },
+  { "code": "CH",   "name": "化學暨生化學系",       "short_name": "化生",   "sort_order": 11 },
+  { "code": "ES",   "name": "運動與休閒學系",       "short_name": "運休",   "sort_order": 12 },
+  { "code": "PE",   "name": "體育與健康促進學系",   "short_name": "體健",   "sort_order": 13 },
+  { "code": "ADM",  "name": "資訊處",               "short_name": "資訊處", "sort_order": 90 },
+  { "code": "OAS",  "name": "教務處",               "short_name": "教務處", "sort_order": 91 },
+  { "code": "OSA",  "name": "學務處",               "short_name": "學務處", "sort_order": 92 }
+]

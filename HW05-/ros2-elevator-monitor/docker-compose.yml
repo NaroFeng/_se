@@ -1,0 +1,168 @@
+# =====================================================================
+# ROS 2 跨樓層巡檢機器人監控後台系統 - 微服務整合
+#
+#   web-frontend (Nginx)      : http://localhost:${FRONTEND_PORT}/   對外入口
+#   web-backend  (FastAPI)     : http://localhost:${BACKEND_PORT}/docs
+#   ros2-bridge  (ROS 2 Humble): rosbridge 9090 / REST 8080（經 Nginx 代理）
+#   db           (PostgreSQL 15): 5432（僅內部網路）
+#
+# 啟動： docker compose up -d --build
+# 檢查： docker compose ps / docker compose logs -f
+# =====================================================================
+
+name: ros2-elevator-monitor
+
+services:
+  # =================================================================
+  # 1. db : PostgreSQL 15（持久化樓層資訊、按鈕特徵、巡檢日誌）
+  # =================================================================
+  db:
+    image: postgres:15
+    container_name: elevator-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-elevator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elevator123}
+      POSTGRES_DB: ${POSTGRES_DB:-elevator_monitor}
+      TZ: Asia/Taipei
+      PGTZ: Asia/Taipei
+    volumes:
+      # 資料持久化（防止 docker compose down 後資料遺失）
+      - postgres_data:/var/lib/postgresql/data
+      # 首次啟動時自動執行建表與種子資料
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    networks:
+      - elevator-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elevator} -d ${POSTGRES_DB:-elevator_monitor}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    # 僅供除錯時連線使用，正式環境建議註解
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  # =================================================================
+  # 2. web-backend : FastAPI（業務邏輯 / 樓層資訊 / 巡檢紀錄 API）
+  # =================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: se-elevator/backend:1.0.0
+    container_name: elevator-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-elevator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elevator123}
+      POSTGRES_DB: ${POSTGRES_DB:-elevator_monitor}
+      DB_AUTO_CREATE: ${DB_AUTO_CREATE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      # 供 ros2-bridge 輪詢狀態
+      ROS_BRIDGE_HOST: ros2-bridge
+      ROS_BRIDGE_REST_PORT: ${ROS2_BRIDGE_PORT:-8080}
+      TZ: Asia/Taipei
+    ports:
+      # 直接開啟 http://localhost:8000/docs 查看 Swagger UI
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - elevator-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  # =================================================================
+  # 3. ros2-bridge : ROS 2 Humble（rosbridge_server + FSM + 按鈕辨識）
+  # =================================================================
+  ros2-bridge:
+    build:
+      context: ./ros2_ws
+      dockerfile: Dockerfile
+    image: se-elevator/ros2-bridge:1.0.0
+    container_name: elevator-ros2-bridge
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      ROSBRIDGE_WS_PORT: ${ROSBRIDGE_WS_PORT:-9090}
+      ROS_BRIDGE_REST_PORT: ${ROS2_BRIDGE_PORT:-8080}
+      # Bridge 啟動時需知道後端位置（/health 有 DB 參數，用於 fsm_node 上報日誌）
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-elevator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elevator123}
+      POSTGRES_DB: ${POSTGRES_DB:-elevator_monitor}
+      BACKEND_CALLBACK_URL: http://backend:8000/api/v1/system/heartbeat
+      # 中央大腦知識來源（fsm_node / button_recognizer 執行前動態拉取）
+      BACKEND_BASE_URL: http://backend:8000
+      KNOWLEDGE_TTL_SEC: ${KNOWLEDGE_TTL_SEC:-300}
+      # 機器人識別碼：不同測試機台各自設定，學習成果統一匯流至中央大腦
+      ROBOT_NAME: ${ROBOT_NAME:-amr-proto-01}
+      TZ: Asia/Taipei
+    ports:
+      # 9090 = rosbridge WebSocket、8080 = Bridge REST（除錯用，正式走 Nginx 代理）
+      - "${ROSBRIDGE_WS_PORT:-9090}:9090"
+      - "${ROS2_BRIDGE_PORT:-8080}:8080"
+    networks:
+      - elevator-net
+    # 讓 Gazebo / 實體機器人在同一個 ROS_DOMAIN_ID 下加入此網域
+    shm_size: "512mb"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  # =================================================================
+  # 4. web-frontend : Nginx（監控頁面 + 反向代理）
+  # =================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: se-elevator/frontend:1.0.0
+    container_name: elevator-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - ros2-bridge
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - elevator-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# =====================================================================
+# 網路：所有容器共用同一個 bridge 網路，以服務名稱互相解析
+# =====================================================================
+networks:
+  elevator-net:
+    name: elevator-net
+    driver: bridge
+
+# =====================================================================
+# Volume：資料庫持久化
+# =====================================================================
+volumes:
+  postgres_data:
+    name: elevator-postgres-data

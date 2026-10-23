@@ -1,0 +1,33 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+node_modules/
+package-lock.json
+.DS_Store
+Thumbs.db
+
+# Runtime
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,53 @@
+<section class="content-placeholder">
+  <h1>{% if user.role == 'admin' %}系統管理 — 公告管理{% else %}此頁面僅限管理員{% endif %}</h1>
+  {% if user.role == 'admin' %}
+<section class="admin-shell admin-shell-single">
+  <aside class="admin-list-wrapper">
+    <h3>公告列表</h3>
+    <p class="muted">點擊任一則載入到右側編輯，或直接新增。</p>
+    <div class="admin-tree-actions">
+      <button class="btn btn-ghost" type="button" id="admin-ann-new">＋ 新增公告</button>
+      <button class="btn btn-ghost" type="button" id="admin-ann-refresh">重新整理</button>
+    </div>
+    <ul class="admin-list-items" id="admin-ann-list"></ul>
+  </aside>
+
+  <form class="admin-form" id="admin-ann-form">
+    <h3 id="admin-ann-form-title">新增公告</h3>
+    <p class="muted">slug 是 URL 用識別，新增後不可修改；其餘欄位儲存時 upsert。</p>
+    <label>
+      <span>Slug（英文數字 / -，例：course-selection）</span>
+      <input type="text" name="slug" required pattern="[a-z0-9\\-]+" />
+    </label>
+    <label>
+      <span>標題</span>
+      <input type="text" name="title" required maxlength="120" />
+    </label>
+    <label>
+      <span>分類</span>
+      <input type="text" name="category" placeholder="選課 / 成績 / 註冊…" />
+    </label>
+    <label>
+      <span>發文日期 (YYYY-MM-DD)</span>
+      <input type="date" name="issued_at" />
+    </label>
+    <label>
+      <span>發文單位 / 作者</span>
+      <input type="text" name="author" />
+    </label>
+    <label>
+      <span>內文（支援 Markdown：## 標題、**粗體**、`code`、有序/無序列表）</span>
+      <textarea name="content" rows="14" required></textarea>
+    </label>
+    <p class="admin-form-error" data-role="error" hidden></p>
+    <div class="actions">
+      <button class="btn btn-ghost" type="button" id="admin-ann-reset">清空</button>
+      <button class="btn btn-ghost" type="button" id="admin-ann-delete" hidden>刪除</button>
+      <button class="btn btn-primary" type="submit">儲存</button>
+    </div>
+  </form>
+</section>
+  {% else %}
+    <p class="muted">目前角色為 <code>{{ user.role }}</code>，請切換為 admin 體驗。</p>
+  {% endif %}
+</section>

@@ -1,0 +1,17 @@
+<section class="announcement-detail">
+  <header>
+    <span class="badge">{{ announcement.category }}</span>
+    <h1>{{ announcement.title }}</h1>
+    <div class="meta">
+      <span>發文單位：{{ announcement.author }}</span>
+      <span>發文日期：{{ announcement.issued_at }}</span>
+      <span>最後更新：{{ announcement.updated_at }}</span>
+    </div>
+  </header>
+  <div class="doc-body">
+    {{ html_content | safe }}
+  </div>
+  <footer>
+    <a class="btn btn-ghost" href="/page/announcements" data-route="/page/announcements">← 返回公告列表</a>
+  </footer>
+</section>

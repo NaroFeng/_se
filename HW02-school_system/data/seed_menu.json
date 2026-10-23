@@ -1,0 +1,109 @@
+[
+  {
+    "id": "home",
+    "label": "首頁",
+    "route": "/page/home",
+    "icon": "home",
+    "sort_order": 1,
+    "required_role": "student",
+    "children": []
+  },
+  {
+    "id": "course-selection-group",
+    "label": "選課作業",
+    "route": null,
+    "icon": "course",
+    "sort_order": 2,
+    "required_role": "student",
+    "children": [
+      { "id": "online-selection", "label": "學生網路選課", "route": "/page/online-selection", "icon": "add", "sort_order": 1, "required_role": "student" },
+      { "id": "online-add", "label": "線上加選作業", "route": "/page/online-add", "icon": "plus", "sort_order": 2, "required_role": "student" },
+      { "id": "online-drop", "label": "線上退選作業", "route": "/page/online-drop", "icon": "minus", "sort_order": 3, "required_role": "student" },
+      { "id": "selection-result", "label": "選課結果查詢", "route": "/page/selection-result", "icon": "result", "sort_order": 4, "required_role": "student" },
+      { "id": "stop-application", "label": "停修申請", "route": "/page/stop-application", "icon": "stop", "sort_order": 5, "required_role": "student" },
+      { "id": "general-first-selection", "label": "通識選課初選作業", "route": "/page/general-first-selection", "icon": "general", "sort_order": 6, "required_role": "student" },
+      { "id": "manual-add", "label": "人工加選申請", "route": "/page/manual-add", "icon": "manual", "sort_order": 7, "required_role": "student" },
+      { "id": "over-credit", "label": "超修學分申請", "route": "/page/over-credit", "icon": "over", "sort_order": 8, "required_role": "student" },
+      { "id": "under-credit", "label": "酌減學分申請", "route": "/page/under-credit", "icon": "under", "sort_order": 9, "required_role": "student" },
+      { "id": "credit-program-info", "label": "學分學程資訊", "route": "/page/credit-program-info", "icon": "program", "sort_order": 10, "required_role": "student" }
+    ]
+  },
+  {
+    "id": "academic-query",
+    "label": "教務資訊查詢",
+    "route": null,
+    "icon": "search",
+    "sort_order": 3,
+    "required_role": "student",
+    "children": [
+      { "id": "grade-semester", "label": "學期成績查詢", "route": "/page/grade-semester", "icon": "grade", "sort_order": 1, "required_role": "student" },
+      { "id": "grade-warning", "label": "學生期中預警查詢", "route": "/page/grade-warning", "icon": "warning", "sort_order": 2, "required_role": "student" },
+      { "id": "grade-history", "label": "歷年成績查詢", "route": "/page/grade-history", "icon": "history", "sort_order": 3, "required_role": "student" },
+      { "id": "course-selected", "label": "選課科目查詢", "route": "/page/course-selected", "icon": "list", "sort_order": 4, "required_role": "student" },
+      { "id": "course-credit-waiver", "label": "抵免科目查詢", "route": "/page/course-credit-waiver", "icon": "waiver", "sort_order": 5, "required_role": "student" },
+      { "id": "course-info", "label": "課程資料查詢", "route": "/page/course-info", "icon": "info", "sort_order": 6, "required_role": "student" },
+      { "id": "course-plan", "label": "課程規畫表", "route": "/page/course-plan", "icon": "plan", "sort_order": 7, "required_role": "student" },
+      { "id": "my-schedule", "label": "我的課表", "route": "/page/my-schedule", "icon": "calendar", "sort_order": 8, "required_role": "student" },
+      { "id": "teacher-schedule", "label": "教師課表查詢", "route": "/page/teacher-schedule", "icon": "teacher", "sort_order": 9, "required_role": "student" },
+      { "id": "classroom-schedule", "label": "教室課表查詢", "route": "/page/classroom-schedule", "icon": "room", "sort_order": 10, "required_role": "student" },
+      { "id": "class-schedule", "label": "班級課表查詢", "route": "/page/class-schedule", "icon": "class", "sort_order": 11, "required_role": "student" },
+      { "id": "graduation-audit", "label": "畢業應修學分過程審核結果查詢", "route": "/page/graduation-audit", "icon": "audit", "sort_order": 12, "required_role": "student" },
+      { "id": "syllabus-preview-reply", "label": "教學計畫教前回覆查詢作業", "route": "/page/syllabus-preview-reply", "icon": "reply", "sort_order": 13, "required_role": "student" },
+      { "id": "subject-warning", "label": "學生預警科目查詢", "route": "/page/subject-warning", "icon": "warning", "sort_order": 14, "required_role": "student" },
+      { "id": "leave-school-review", "label": "離校審核查詢", "route": "/page/leave-school-review", "icon": "leave", "sort_order": 15, "required_role": "student" }
+    ]
+  },
+  {
+    "id": "cross-disciplinary",
+    "label": "跨領域專區",
+    "route": null,
+    "icon": "cross",
+    "sort_order": 4,
+    "required_role": "student",
+    "children": [
+      { "id": "micro-program", "label": "微學程修習結果查詢", "route": "/page/micro-program", "icon": "micro", "sort_order": 1, "required_role": "student" },
+      { "id": "cross-program", "label": "跨領域學程修習結果查詢", "route": "/page/cross-program", "icon": "cross", "sort_order": 2, "required_role": "student" },
+      { "id": "minor-double-major", "label": "輔系雙主修修習結果查詢", "route": "/page/minor-double-major", "icon": "minor", "sort_order": 3, "required_role": "student" }
+    ]
+  },
+  {
+    "id": "student-affairs",
+    "label": "學務資訊查詢",
+    "route": null,
+    "icon": "affairs",
+    "sort_order": 5,
+    "required_role": "student",
+    "children": [
+      { "id": "attendance-detail", "label": "學生個人缺曠課證明明細表", "route": "/page/attendance-detail", "icon": "attendance", "sort_order": 1, "required_role": "student" },
+      { "id": "reward-punishment", "label": "學生個人獎懲狀況明細表", "route": "/page/reward-punishment", "icon": "reward", "sort_order": 2, "required_role": "student" },
+      { "id": "financial-aid", "label": "學生弱勢助學金資格查詢", "route": "/page/financial-aid", "icon": "money", "sort_order": 3, "required_role": "student" },
+      { "id": "military-service", "label": "兵役申請查詢", "route": "/page/military-service", "icon": "army", "sort_order": 4, "required_role": "student" }
+    ]
+  },
+  {
+    "id": "announcements",
+    "label": "公告訊息",
+    "route": null,
+    "icon": "megaphone",
+    "sort_order": 6,
+    "required_role": "student",
+    "children": [
+      { "id": "course-selection", "label": "選課公告", "route": "/page/announcement/course-selection", "icon": "doc", "sort_order": 1, "required_role": "student" },
+      { "id": "paperless-transcript", "label": "無紙化成績單公告", "route": "/page/announcement/paperless-transcript", "icon": "doc", "sort_order": 2, "required_role": "student" },
+      { "id": "all-announcements", "label": "所有公告", "route": "/page/announcements", "icon": "list", "sort_order": 3, "required_role": "student" }
+    ]
+  },
+  {
+    "id": "admin",
+    "label": "系統管理",
+    "route": null,
+    "icon": "shield",
+    "sort_order": 99,
+    "required_role": "admin",
+    "children": [
+      { "id": "admin-users", "label": "人員管理", "route": "/page/admin/users", "icon": "people", "sort_order": 1, "required_role": "admin" },
+      { "id": "admin-menu", "label": "選單管理", "route": "/page/admin/menu", "icon": "menu", "sort_order": 2, "required_role": "admin" },
+      { "id": "admin-announcements", "label": "公告管理", "route": "/page/admin/announcements", "icon": "doc", "sort_order": 3, "required_role": "admin" }
+    ]
+  }
+]

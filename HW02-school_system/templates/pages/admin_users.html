@@ -1,0 +1,213 @@
+<section class="admin-users">
+  <header class="users-toolbar">
+    <div class="users-filters">
+      <input type="search" id="users-search" placeholder="搜尋帳號 / 姓名 / 學號 / 系所 / Email / 班級" />
+      <select id="users-filter-role">
+        <option value="">全部角色</option>
+        <option value="student">學生</option>
+        <option value="teacher">教師</option>
+        <option value="admin">管理員</option>
+      </select>
+      <select id="users-filter-status">
+        <option value="">全部狀態</option>
+        <option value="active">啟用</option>
+        <option value="disabled">停用</option>
+        <option value="graduated">畢業</option>
+        <option value="suspended">暫停</option>
+      </select>
+      <select id="users-filter-department"><option value="">全部系所</option></select>
+      <button class="btn btn-ghost" type="button" id="users-refresh">重新整理</button>
+    </div>
+    <div class="users-toolbar-actions">
+      <button class="btn btn-ghost" type="button" id="users-export">匯出 CSV</button>
+      <button class="btn btn-ghost" type="button" id="users-download-template">下載模板</button>
+      <label class="btn btn-ghost" for="users-import-file">批次匯入</label>
+      <input type="file" id="users-import-file" accept=".csv,text/csv" hidden />
+      <button class="btn btn-primary" type="button" id="users-new">＋ 新增人員</button>
+    </div>
+  </header>
+
+  <p class="users-summary muted" id="users-summary">載入中…</p>
+
+  <table class="data-table users-table">
+    <thead>
+      <tr>
+        <th>帳號 / 學號</th>
+        <th>姓名</th>
+        <th>系所</th>
+        <th>年級</th>
+        <th>班級</th>
+        <th>角色</th>
+        <th>狀態</th>
+        <th>Email</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="users-tbody">
+      <tr><td colspan="9" class="muted">載入中…</td></tr>
+    </tbody>
+  </table>
+
+  <div class="users-pager">
+    <button class="btn btn-ghost" type="button" id="users-prev">‹ 上一頁</button>
+    <span id="users-page-info" class="muted">—</span>
+    <button class="btn btn-ghost" type="button" id="users-next">下一頁 ›</button>
+  </div>
+
+  <p class="admin-form-error" data-role="error" hidden></p>
+
+  <!-- Import result modal -->
+  <dialog class="modal" id="import-result-modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-header">
+        <h2>批次匯入結果</h2>
+        <button class="modal-close" value="cancel">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="muted" id="import-result-summary"></p>
+        <div class="import-result-stats">
+          <span class="badge badge-success" id="import-stat-created">建立 0</span>
+          <span class="badge badge-warning" id="import-stat-skipped">略過 0</span>
+          <span class="badge badge-role-admin" id="import-stat-errors">錯誤 0</span>
+        </div>
+        <details>
+          <summary>詳細紀錄</summary>
+          <div class="import-result-list" id="import-result-list"></div>
+        </details>
+      </div>
+      <footer class="modal-footer">
+        <button value="cancel" class="btn btn-primary" id="import-result-close">關閉</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <aside class="drawer" id="users-drawer" aria-hidden="true">
+    <div class="drawer-backdrop" data-action="close"></div>
+    <div class="drawer-panel" role="dialog" aria-modal="true">
+      <header class="drawer-header">
+        <h3 id="users-drawer-title">編輯人員</h3>
+        <button class="drawer-close" type="button" data-action="close" aria-label="關閉">×</button>
+      </header>
+      <form class="drawer-body" id="users-form">
+        <input type="hidden" name="id" />
+        <p class="muted">* 為必填。新增時密碼必填；編輯時密碼留空表示不修改。</p>
+
+        <fieldset class="form-section">
+          <legend>基本資料</legend>
+          <label>
+            <span>帳號 / 學號 *</span>
+            <input name="username" type="text" required pattern="[A-Za-z0-9._\-@]+" maxlength="40"
+                   placeholder="例如：111210501 或 wsm@nku.edu.tw" />
+          </label>
+          <label>
+            <span>姓名 *</span>
+            <input name="display_name" type="text" required maxlength="80" />
+          </label>
+          <label>
+            <span>密碼 <span class="muted" id="users-pwd-hint">(新增必填)</span></span>
+            <input name="password" type="password" minlength="4" autocomplete="new-password" />
+          </label>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend>角色 / 狀態</legend>
+          <label>
+            <span>角色 *</span>
+            <select name="role" required>
+              <option value="student">學生 (student)</option>
+              <option value="teacher">教師 (teacher)</option>
+              <option value="admin">管理員 (admin)</option>
+            </select>
+          </label>
+          <label>
+            <span>狀態</span>
+            <select name="status">
+              <option value="active">啟用</option>
+              <option value="disabled">停用</option>
+              <option value="graduated">畢業</option>
+              <option value="suspended">暫停</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset class="form-section" id="students-only">
+          <legend>學籍（僅學生）</legend>
+          <label>
+            <span>系所</span>
+            <select name="department_id" id="users-form-department">
+              <option value="">— 無 —</option>
+            </select>
+          </label>
+          <label>
+            <span>學號（可與帳號不同）</span>
+            <input name="student_id" type="text" maxlength="20" />
+          </label>
+          <label>
+            <span>入學學年（中華民國學年，例：111 = 111 學年入學）</span>
+            <input name="year_enrolled" type="number" min="80" max="200" placeholder="例：111" />
+          </label>
+          <label>
+            <span>班別 <small class="muted">(顯示為「資工二A」由系統自動計算)</small></span>
+            <select name="section">
+              <option value="">— 無 —</option>
+              <option value="A">A 班</option>
+              <option value="B">B 班</option>
+              <option value="C">C 班</option>
+              <option value="D">D 班</option>
+              <option value="A1">A1 班</option>
+              <option value="B1">B1 班</option>
+            </select>
+          </label>
+          <p class="muted preview-class" id="users-class-preview"></p>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend>聯絡 / 備註</legend>
+          <label>
+            <span>Email <small class="muted">(留空 = 自動設為 s學號@nqu.edu.tw)</small></span>
+            <input name="email" type="email" maxlength="120" placeholder="s114210501@nqu.edu.tw" />
+          </label>
+          <label>
+            <span>電話</span>
+            <input name="phone" type="text" maxlength="40" />
+          </label>
+          <label>
+            <span>系所顯示名稱（舊欄位，department_id 為主）</span>
+            <input name="department" type="text" maxlength="80" placeholder="選填" />
+          </label>
+          <label>
+            <span>備註</span>
+            <textarea name="note" rows="2" maxlength="500"></textarea>
+          </label>
+        </fieldset>
+
+        <p class="admin-form-error" data-role="form-error" hidden></p>
+        <footer class="drawer-footer">
+          <button type="button" class="btn btn-ghost" data-action="close">取消</button>
+          <button type="submit" class="btn btn-primary">儲存</button>
+        </footer>
+      </form>
+    </div>
+  </aside>
+
+  <dialog class="modal" id="reset-pw-modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-header">
+        <h2>重設密碼</h2>
+        <button class="modal-close" value="cancel">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="muted">為 <strong id="reset-pw-username"></strong> 設定新密碼：</p>
+        <label>
+          <span>新密碼（至少 4 字元）</span>
+          <input type="password" name="new_password" required minlength="4" />
+        </label>
+        <p class="admin-form-error" data-role="reset-error" hidden></p>
+      </div>
+      <footer class="modal-footer">
+        <button value="cancel" class="btn btn-ghost">取消</button>
+        <button value="confirm" class="btn btn-primary" id="reset-pw-submit">確認重設</button>
+      </footer>
+    </form>
+  </dialog>
+</section>

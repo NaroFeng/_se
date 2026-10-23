@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SynapseBrain — 個人知識圖譜</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <!-- 本地 2D 力導向圖譜函式庫（vasturiano/force-graph，不依賴 CDN）；若遺失則退回 CDN -->
+  <script src="/static/force-graph.min.js"></script>
+  <script>
+    if (typeof ForceGraph === "undefined") {
+      document.write('<script src="https://unpkg.com/force-graph@1/dist/force-graph.min.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">🧠</span> SynapseBrain</div>
+    <div class="topbar-sub">個人情境編譯器 &amp; 本地記憶圖譜</div>
+  </header>
+
+  <main class="layout">
+    <!-- 左 / 中：圖譜畫布 -->
+    <section class="canvas-pane">
+      <div class="canvas-toolbar">
+        <button id="btn-refresh" class="btn ghost" title="重新載入圖譜">↻ 重新整理</button>
+        <button id="btn-demo" class="btn ghost" title="載入範例節點與連線">✨ 範例</button>
+        <span id="graph-stats" class="muted"></span>
+      </div>
+      <div id="canvas-error" class="canvas-error hidden"></div>
+      <div id="network"></div>
+      <div class="scan"></div>
+      <div class="legend">
+        <span><i style="background:#5aa2ff;color:#5aa2ff"></i>主題</span>
+        <span><i style="background:#43d39a;color:#43d39a"></i>技能</span>
+        <span><i style="background:#b78cff;color:#b78cff"></i>人格</span>
+        <span><i style="background:#ffb454;color:#ffb454"></i>規則</span>
+      </div>
+      <aside id="node-card" class="node-card hidden">
+        <h3 id="node-title">—</h3>
+        <div id="node-meta" class="muted"></div>
+        <p id="node-summary"></p>
+        <div class="row">
+          <button id="btn-boost" class="btn primary">+ 加權</button>
+          <button id="btn-delete" class="btn danger">刪除</button>
+        </div>
+      </aside>
+    </section>
+
+    <!-- 右：頁籤面板 -->
+    <section class="side-pane">
+      <nav class="tabs">
+        <button class="tab active" data-tab="compiler">編譯 Prompt</button>
+        <button class="tab" data-tab="ingest">匯入同步</button>
+        <button class="tab" data-tab="chat">聊天 / 指令</button>
+      </nav>
+
+      <div id="tab-compiler" class="tab-pane active">
+        <label class="field-label" for="focus-select">焦點節點（可不選＝整顆大腦）</label>
+        <select id="focus-select"><option value="">— 整顆大腦 —</option></select>
+        <label class="field-label" for="limit-input">節點數量上限</label>
+        <input id="limit-input" type="number" min="1" max="50" value="8" />
+        <button id="btn-compile" class="btn primary block">產生外部 Prompt</button>
+        <label class="field-label" for="prompt-output">編譯結果（複製後貼給 Gemini / Claude）</label>
+        <textarea id="prompt-output" rows="16" readonly placeholder="按「產生外部 Prompt」…"></textarea>
+        <button id="btn-copy" class="btn ghost block">⧉ 複製到剪貼簿</button>
+      </div>
+
+      <div id="tab-ingest" class="tab-pane">
+        <label class="field-label" for="ingest-input">貼上外部 AI 的回覆（含 ```brain-update 區塊）</label>
+        <textarea id="ingest-input" rows="14" placeholder="把外部 AI 的回覆貼在這裡…"></textarea>
+        <button id="btn-ingest" class="btn primary block">同步到大腦</button>
+        <pre id="ingest-result" class="result">—</pre>
+      </div>
+
+      <div id="tab-chat" class="tab-pane">
+        <div id="chat-log" class="chat-log"></div>
+        <label class="check-row"><input id="chat-remember" type="checkbox" checked /> 聊完自動記住重點（寫回圖譜，需開 Ollama）</label>
+        <div id="ollama-status" class="muted">本機模型狀態檢查中…</div>
+        <div class="chat-row">
+          <input id="chat-input" type="text" placeholder="/add &lt;id&gt; &lt;分類&gt; &lt;摘要&gt; · /boost &lt;id&gt; · /connect &lt;來源&gt; &lt;目標&gt; &lt;關係&gt; · 或直接打字聊天" />
+          <button id="btn-send" class="btn primary">送出</button>
+        </div>
+        <details class="help">
+          <summary>指令說明</summary>
+          <ul>
+            <li><code>/add &lt;id&gt; &lt;分類&gt; &lt;摘要…&gt;</code>（分類：topic / skill / persona / rule）</li>
+            <li><code>/boost &lt;id&gt;</code>（幫節點加權）</li>
+            <li><code>/connect &lt;來源&gt; &lt;目標&gt; &lt;關係&gt;</code>（把兩個節點連起來）</li>
+            <li>其他文字 → 送給本機 Ollama 聊天（會自動帶入權重最高的記憶節點）。</li>
+          </ul>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

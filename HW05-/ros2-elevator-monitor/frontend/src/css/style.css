@@ -1,0 +1,263 @@
+:root {
+  --bg: #0b1220;
+  --panel: #131c2e;
+  --panel-2: #1a2438;
+  --line: #24324b;
+  --text: #dbe6f5;
+  --muted: #7b8ba6;
+  --accent: #35c4a5;
+  --warn: #f2b544;
+  --error: #f2607a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* ---------------- 頂列 ---------------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 22px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: 18px; font-weight: 600; letter-spacing: .5px; }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.clock { font-family: ui-monospace, Consolas, monospace; color: var(--muted); font-size: 13px; }
+
+.badge {
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+}
+.badge.online  { background: rgba(53,196,165,.15); color: var(--accent); }
+.badge.offline { background: rgba(242,96,122,.15); color: var(--error); }
+
+/* ---------------- 版面 ---------------- */
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr 380px;
+  gap: 16px;
+  padding: 16px;
+}
+@media (max-width: 1200px) { .layout { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+}
+.panel h2 {
+  font-size: 14px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.panel h2:not(:first-child) { margin-top: 22px; }
+
+/* ---------------- 狀態格 ---------------- */
+.status-grid { display: grid; gap: 8px; }
+.status-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--panel-2); border-radius: 6px;
+}
+.status-item .label { color: var(--muted); font-size: 13px; }
+.status-item .value { font-family: ui-monospace, Consolas, monospace; font-size: 14px; }
+
+.battery-bar {
+  margin-top: 10px; height: 8px; background: var(--panel-2);
+  border-radius: 999px; overflow: hidden;
+}
+#battery-fill {
+  height: 100%; background: var(--accent); transition: width .4s ease;
+}
+
+/* ---------------- 樓層清單 ---------------- */
+.floor-list { display: flex; flex-direction: column; gap: 6px; }
+.floor-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 11px; background: var(--panel-2);
+  border-left: 3px solid var(--line); border-radius: 6px;
+}
+.floor-item.current { border-left-color: var(--accent); background: rgba(53,196,165,.08); }
+.floor-item .code { font-family: ui-monospace, Consolas, monospace; font-weight: 700; }
+.floor-item .name { color: var(--muted); font-size: 12px; }
+.floor-item .tag {
+  font-size: 11px; padding: 2px 7px; border-radius: 4px;
+  background: rgba(123,139,166,.18); color: var(--muted);
+}
+
+/* ---------------- 影像 ---------------- */
+.video-box {
+  position: relative; background: #000;
+  border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--line);
+}
+.video-box img { display: block; width: 100%; }
+.video-overlay {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: space-between;
+  padding: 6px 10px; background: rgba(0,0,0,.55);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px; color: var(--muted);
+}
+.hint { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.hint code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px; }
+
+/* ---------------- 統計 ---------------- */
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat-card {
+  background: var(--panel-2); border-radius: 8px;
+  padding: 12px; text-align: center;
+}
+.stat-card .num { font-size: 22px; font-weight: 700; color: var(--accent); }
+.stat-card .cap { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ---------------- 機器人 meta ---------------- */
+.robot-meta {
+  display: flex; justify-content: space-between;
+  padding: 6px 10px; margin-bottom: 10px;
+  background: var(--panel-2); border-radius: 6px;
+  font-size: 13px;
+}
+.robot-meta .label { color: var(--muted); }
+
+/* ---------------- FSM / 電梯狀態徽章 ---------------- */
+.state-chip {
+  display: inline-block; padding: 3px 9px;
+  border-radius: 999px; font-size: 12px; font-weight: 600;
+}
+.state-chip.idle   { background: rgba(123,139,166,.20); color: #9fb0c9; }
+.state-chip.busy   { background: rgba(53,196,165,.16);  color: var(--accent); }
+.state-chip.paused { background: rgba(242,181,68,.16);  color: var(--warn); }
+.state-chip.error  { background: rgba(242,96,122,.18);  color: var(--error); }
+
+/* ---------------- 錯誤提示 ---------------- */
+.error-box {
+  margin-top: 10px; padding: 9px 11px;
+  background: rgba(242,96,122,.10);
+  border-left: 3px solid var(--error);
+  border-radius: 6px; font-size: 13px; color: #ffb3c4;
+}
+
+/* ---------------- 巡檢控制 ---------------- */
+.waypoint-input {
+  width: 100%; padding: 8px 10px; margin-bottom: 9px;
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px;
+  font-family: inherit; font-size: 13px;
+}
+.waypoint-input:focus { outline: none; border-color: var(--accent); }
+
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-grid .ctl:last-child { grid-column: 1 / -1; }
+
+.ctl {
+  padding: 9px 10px; font-size: 13px; font-family: inherit;
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px;
+  cursor: pointer; transition: all .15s ease;
+}
+.ctl:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.ctl:disabled { opacity: .35; cursor: not-allowed; }
+.ctl.primary { background: rgba(53,196,165,.12); border-color: rgba(53,196,165,.35); color: var(--accent); }
+.ctl.danger  { border-color: rgba(242,96,122,.35); color: var(--error); }
+.ctl.danger:hover:not(:disabled) { border-color: var(--error); background: rgba(242,96,122,.10); }
+
+/* ---------------- Toast ---------------- */
+.toast {
+  position: fixed; right: 20px; bottom: 20px;
+  padding: 11px 18px; border-radius: 8px;
+  background: var(--panel-2); border: 1px solid var(--accent);
+  color: var(--accent); font-size: 13px;
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.err { border-color: var(--error); color: var(--error); }
+
+/* ---------------- 中央大腦策略區 ---------------- */
+.brain-meta {
+  padding: 8px 10px; margin-bottom: 9px;
+  background: var(--panel-2); border-radius: 6px;
+  font-size: 12px; color: var(--muted); line-height: 1.7;
+}
+.brain-meta b { color: var(--text); font-weight: 600; }
+
+.policy-filter { display: flex; gap: 6px; margin-bottom: 9px; }
+.policy-filter .chip {
+  padding: 5px 11px; font-size: 12px; font-family: inherit;
+  background: var(--panel-2); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+  transition: all .15s ease;
+}
+.policy-filter .chip.active {
+  background: rgba(53,196,165,.12);
+  border-color: rgba(53,196,165,.4); color: var(--accent);
+}
+
+.policy-list { display: flex; flex-direction: column; gap: 7px; max-height: 320px; overflow-y: auto; }
+
+.policy-item {
+  padding: 9px 11px;
+  background: var(--panel-2); border-radius: 6px;
+  border-left: 3px solid var(--line);
+}
+.policy-item.learned { border-left-color: var(--accent); }
+.policy-item.converged { border-left-color: #55627a; }
+
+.policy-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; margin-bottom: 5px;
+}
+.policy-row .code { font-family: ui-monospace, Consolas, monospace; font-weight: 700; }
+.policy-row .src { color: var(--muted); font-size: 11px; }
+
+.policy-params {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+}
+.policy-params .p {
+  padding: 2px 7px; border-radius: 4px;
+  background: rgba(123,139,166,.14);
+}
+.policy-params .p.drift { background: rgba(242,181,68,.14); color: var(--warn); }
+.policy-params .p.base  { background: rgba(53,196,165,.12); color: var(--accent); }
+
+.policy-reason {
+  margin-top: 5px; font-size: 11px; color: var(--muted);
+  line-height: 1.5; font-style: italic;
+}
+
+/* ---------------- 日誌 ---------------- */
+.controls { display: flex; gap: 8px; margin-bottom: 10px; }
+.controls select, .controls button {
+  flex: 1; padding: 7px 9px; font-size: 13px;
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px;
+  cursor: pointer; font-family: inherit;
+}
+.controls button:hover { border-color: var(--accent); color: var(--accent); }
+
+.log-list { max-height: 62vh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.log-item {
+  padding: 8px 10px; background: var(--panel-2);
+  border-left: 3px solid var(--muted); border-radius: 6px;
+}
+.log-item.success { border-left-color: var(--accent); }
+.log-item.failed  { border-left-color: var(--error); }
+.log-item.warning { border-left-color: var(--warn); }
+.log-item.running { border-left-color: var(--muted); }
+.log-head {
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-family: ui-monospace, Consolas, monospace;
+}
+.log-type { font-weight: 700; }
+.log-time { color: var(--muted); }
+.log-msg { font-size: 13px; margin-top: 4px; line-height: 1.5; }
+.log-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }

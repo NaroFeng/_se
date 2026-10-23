@@ -1,0 +1,29 @@
+<section class="content-placeholder">
+  <h1>歡迎使用 {{ school_name }} {{ system_name }}</h1>
+  <p class="muted">目前使用者：{{ user.display_name }}（{{ user.department }}，角色：{{ user.role }}）</p>
+  <div class="role-switcher">
+    <label for="role-switcher">Demo 角色切換：</label>
+    <select id="role-switcher">
+      <option value="student" {% if user.role == 'student' %}selected{% endif %}>學生 (student)</option>
+      <option value="teacher" {% if user.role == 'teacher' %}selected{% endif %}>教師 (teacher)</option>
+      <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>管理員 (admin)</option>
+    </select>
+    {% if user.role_switched %}<span class="badge badge-warning">已切換</span>{% endif %}
+  </div>
+
+  <section class="card">
+    <h2>最新公告</h2>
+    <p class="muted">從左側選單選擇「公告訊息」查看完整內容，或點擊下方快速連結：</p>
+    <ul class="quick-links">
+      {% for a in announcements %}
+        <li>
+          <a href="/page/announcement/{{ a.slug }}" data-route="/page/announcement/{{ a.slug }}">
+            <span class="badge">{{ a.category }}</span>
+            {{ a.title }}
+            <small class="muted">（{{ a.issued_at }}）</small>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</section>

@@ -1,0 +1,400 @@
+<?xml version="1.0" ?>
+<!--
+  campus_elevator.world — 學校大樓電梯廳與走廊（Gazebo Classic SDF）
+
+  場景佈局（俯視，X 軸向右、Y 軸向前）：
+
+      ┌──────────── 走廊 ────────────┐
+      │                              │
+      │   ▓▓▓ 電梯門框 ▓▓▓           │
+      │   ▓┌──────────┐▓             │
+      │   ▓│ 車廂     │▓  ← 按鈕面板 ▓│  ▲ 機器人起點
+      │   ▓└──────────┘▓             │
+      │                              │
+      └──────────────────────────────┘
+
+  尺度參考（依學校大樓實測）：
+    · 走廊寬 2.4m、淨高 2.9m
+    · 電梯門框：寬 1.2m、高 2.1m
+    · 車廂：深 2.4m、寬 1.6m
+    · 按鈕面板：安裝於門框右側，中心高度 1.10m（機器人相機 0.85m 可完整拍攝）
+
+  設計取捨（奧卡姆剃刀）：
+    刻意「不」建立多層樓梯與電梯井垂直升降剛體。
+    跨樓層切換由 elevator_sim_node 的狀態機處理，
+    避免穿模（機器人穿過樓地板）與不穩定的接觸力學，
+    讓仿真結果可重現、可解釋。
+    本世界僅提供「單層電梯廳」供機器人做平面運動。
+-->
+<sdf version="1.6">
+  <world name="campus_elevator">
+
+    <!-- 物理引擎：減少穿模，固定時間步長以確保可重現 -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <gravity>0 0 -9.8</gravity>
+
+    <!-- ==================== 光照 ==================== -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.95 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.3 0.4 -1</direction>
+    </light>
+
+    <light type="directional" name="corridor_light">
+      <pose>0 0 2.85 0 0 0</pose>
+      <diffuse>0.85 0.88 0.95 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <direction>0 0 -1</direction>
+    </light>
+
+    <!-- ==================== 地面 ==================== -->
+    <model name="floor">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>20 16 0.1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>20 16 0.1</size></box></geometry>
+          <material>
+            <ambient>0.45 0.45 0.48 1</ambient>
+            <diffuse>0.55 0.55 0.58 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== 走廊側牆 ==================== -->
+    <!-- 左牆（X = -1.2） -->
+    <model name="wall_left">
+      <static>true</static>
+      <pose>-1.25 0 1.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.1 14 2.9</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.1 14 2.9</size></box></geometry>
+          <material>
+            <ambient>0.75 0.75 0.72 1</ambient>
+            <diffuse>0.85 0.85 0.82 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 右牆（X = +1.2），在電梯廳處開門洞 -->
+    <model name="wall_right">
+      <static>true</static>
+      <pose>1.25 0 1.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.1 14 2.9</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.1 14 2.9</size></box></geometry>
+          <material>
+            <ambient>0.75 0.75 0.72 1</ambient>
+            <diffuse>0.85 0.85 0.82 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== 後方走廊牆 ==================== -->
+    <model name="wall_back">
+      <static>true</static>
+      <pose>0 6.0 1.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.6 0.1 2.9</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.6 0.1 2.9</size></box></geometry>
+          <material>
+            <ambient>0.75 0.75 0.72 1</ambient>
+            <diffuse>0.85 0.85 0.82 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== 電梯井（單層，深度 2.4m）==================== -->
+    <!-- 井底 -->
+    <model name="cabin_floor">
+      <static>true</static>
+      <pose>0 -2.4 -0.05 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.8 2.4 0.1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.8 2.4 0.1</size></box></geometry>
+          <material>
+            <ambient>0.3 0.32 0.35 1</ambient>
+            <diffuse>0.35 0.38 0.42 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 井後牆 -->
+    <model name="cabin_back_wall">
+      <static>true</static>
+      <pose>0 -3.65 1.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.8 0.1 2.9</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.8 0.1 2.9</size></box></geometry>
+          <material>
+            <ambient>0.6 0.62 0.66 1</ambient>
+            <diffuse>0.68 0.70 0.74 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 井側牆（左） -->
+    <model name="cabin_side_left">
+      <static>true</static>
+      <pose>-0.95 -2.4 1.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.1 2.4 2.9</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.1 2.4 2.9</size></box></geometry>
+          <material>
+            <ambient>0.6 0.62 0.66 1</ambient>
+            <diffuse>0.68 0.70 0.74 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 井側牆（右） -->
+    <model name="cabin_side_right">
+      <static>true</static>
+      <pose>0.95 -2.4 1.45 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.1 2.4 2.9</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.1 2.4 2.9</size></box></geometry>
+          <material>
+            <ambient>0.6 0.62 0.66 1</ambient>
+            <diffuse>0.68 0.70 0.74 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 車廂頂 -->
+    <model name="cabin_ceiling">
+      <static>true</static>
+      <pose>0 -2.4 2.95 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1.8 2.4 0.1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.8 2.4 0.1</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.6 1</ambient>
+            <diffuse>0.62 0.64 0.68 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== 電梯門框 ==================== -->
+    <!-- 門框：開口寬 1.2m、高 2.1m -->
+    <model name="door_frame">
+      <static>true</static>
+      <pose>0 -1.18 1.05 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.12 0.16 2.1</size></box></geometry>
+          <material>
+            <ambient>0.25 0.25 0.28 1</ambient>
+            <diffuse>0.32 0.32 0.36 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><box><size>0.12 0.16 2.1</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- ==================== 電梯門板（可滑動）==================== -->
+    <!-- 兩片對開門，由 elevator_sim_node 透過 /elevator/door_cmd 驅動
+         （以 SetModelState 改變位姿，無需編寫 C++ plugin） -->
+    <model name="elevator_door_left">
+      <static>false</static>
+      <pose>0.30 -1.18 1.05 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>35</mass>
+          <inertia><ixx>4.2</ixx><iyy>4.2</iyy><izz>8.0</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <visual name="visual">
+          <geometry><box><size>0.62 0.06 2.1</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.60 1</ambient>
+            <diffuse>0.72 0.74 0.78 1</diffuse>
+            <specular>0.35 0.35 0.35 1</specular>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><box><size>0.62 0.06 2.1</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="elevator_door_right">
+      <static>false</static>
+      <pose>-0.30 -1.18 1.05 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>35</mass>
+          <inertia><ixx>4.2</ixx><iyy>4.2</iyy><izz>8.0</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <visual name="visual">
+          <geometry><box><size>0.62 0.06 2.1</size></box></geometry>
+          <material>
+            <ambient>0.55 0.57 0.60 1</ambient>
+            <diffuse>0.72 0.74 0.78 1</diffuse>
+            <specular>0.35 0.35 0.35 1</specular>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><box><size>0.62 0.06 2.1</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- ==================== 樓層按鈕面板 ==================== -->
+    <!-- 位置：門框右側 (X=+0.45)，中心高度 1.10m
+         機器人相機在 0.85m，可完整拍攝 7 顆按鈕 -->
+    <model name="button_panel">
+      <static>true</static>
+      <pose>0.45 -1.16 1.10 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.30 0.04 0.60</size></box></geometry>
+          <material>
+            <ambient>0.20 0.21 0.24 1</ambient>
+            <diffuse>0.26 0.28 0.32 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><box><size>0.30 0.04 0.60</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- 7 顆樓層按鈕（雙排：4 + 3），對齊 1F 電梯廳版面配置 -->
+    <model name="button_B2">
+      <static>true</static>
+      <pose>0.36 -1.19 1.32 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.1 0.1 0.12 1</emissive><diffuse>0.5 0.5 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="button_B1">
+      <static>true</static>
+      <pose>0.45 -1.19 1.32 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.1 0.1 0.12 1</emissive><diffuse>0.5 0.5 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="button_1F">
+      <static>true</static>
+      <pose>0.54 -1.19 1.32 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.2 0.7 0.35 1</emissive><diffuse>0.4 0.9 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="button_2F">
+      <static>true</static>
+      <pose>0.36 -1.19 1.20 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.1 0.1 0.12 1</emissive><diffuse>0.5 0.5 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="button_3F">
+      <static>true</static>
+      <pose>0.45 -1.19 1.20 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.1 0.1 0.12 1</emissive><diffuse>0.5 0.5 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="button_4F">
+      <static>true</static>
+      <pose>0.54 -1.19 1.20 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.1 0.1 0.12 1</emissive><diffuse>0.5 0.5 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="button_5F">
+      <static>true</static>
+      <pose>0.45 -1.19 1.08 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.015 0.06</size></box></geometry>
+          <material><emissive>0.1 0.1 0.12 1</emissive><diffuse>0.5 0.5 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== 機器人起點 ==================== -->
+    <!-- 距電梯門 1.6m，面對電梯（+Y 方向為機器人前方） -->
+    <include>
+      <uri>model://ikea_mecanum_bot</uri>
+      <name>ikea_mecanum_bot</name>
+      <pose>-0.45 0.40 0 0 0 ${-pi/2}</pose>
+    </include>
+
+    <!-- ==================== 場景 GUI ==================== -->
+    <gui fullscreen='0'>
+      <camera name="user_camera">
+        <pose>-4.5 3.2 2.6 0 0.6 0.3</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+  </world>
+</sdf>

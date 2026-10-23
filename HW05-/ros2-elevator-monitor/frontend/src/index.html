@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>跨樓層巡檢機器人監控後台</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>ROS 2 跨樓層巡檢機器人監控後台</h1>
+    <div class="topbar-right">
+      <span id="conn-badge" class="badge offline">連線中…</span>
+      <span id="clock" class="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ============ 左欄：狀態與樓層 ============ -->
+    <section class="panel">
+      <h2>機器人狀態</h2>
+      <div class="robot-meta">
+        <span class="label">機器人</span>
+        <span class="value" id="robot-name">-</span>
+      </div>
+
+      <div class="status-grid">
+        <div class="status-item">
+          <span class="label">FSM 狀態</span>
+          <span class="value" id="fsm-state">-</span>
+        </div>
+        <div class="status-item">
+          <span class="label">目前樓層</span>
+          <span class="value" id="current-floor">-</span>
+        </div>
+        <div class="status-item">
+          <span class="label">目標樓層</span>
+          <span class="value" id="target-floor">-</span>
+        </div>
+        <div class="status-item">
+          <span class="label">電梯狀態</span>
+          <span class="value" id="elevator-state">-</span>
+        </div>
+        <div class="status-item">
+          <span class="label">目前地圖</span>
+          <span class="value" id="map-name">-</span>
+        </div>
+        <div class="status-item">
+          <span class="label">電量</span>
+          <span class="value" id="battery">-</span>
+        </div>
+        <div class="status-item">
+          <span class="label">巡檢進度</span>
+          <span class="value" id="waypoint">-</span>
+        </div>
+      </div>
+
+      <div class="battery-bar"><div id="battery-fill" style="width:0%"></div></div>
+
+      <div id="error-box" class="error-box" style="display:none"></div>
+
+      <h2>巡檢控制</h2>
+      <input id="waypoint-input" class="waypoint-input"
+             placeholder="目標樓層，例：1F,3F,5F（留空＝全樓層）">
+      <div class="btn-grid">
+        <button id="btn-start" class="ctl primary">開始巡檢</button>
+        <button id="btn-pause"  class="ctl">暫停</button>
+        <button id="btn-resume" class="ctl">恢復</button>
+        <button id="btn-stop"   class="ctl">中止</button>
+        <button id="btn-reset"  class="ctl danger">重置 FSM</button>
+      </div>
+      <p class="hint">按鈕可用性會依 FSM 狀態自動切換（對應 9 個狀態）。</p>
+
+      <h2>🧠 中央大腦自適應狀態</h2>
+      <div class="brain-meta" id="brain-meta">載入中…</div>
+      <div class="policy-filter">
+        <button class="chip active" data-only-learned="0">全部按鈕</button>
+        <button class="chip" data-only-learned="1">僅已學習</button>
+      </div>
+      <div id="policy-list" class="policy-list">載入中…</div>
+      <p class="hint">
+        參數由中央大腦依各機台實際執行經驗自動演進；
+        灰色代表已收斂回基準值（防單向漂移）。
+      </p>
+
+      <h2>樓層資訊</h2>
+      <div id="floor-list" class="floor-list">載入中…</div>
+    </section>
+
+    <!-- ============ 中欄：影像畫面 ============ -->
+    <section class="panel">
+      <h2>即時影像</h2>
+      <div class="video-box">
+        <img id="camera-img" alt="機器人影像串流尚未連線" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect width='640' height='360' fill='%23111a2b'/%3E%3Ctext x='320' y='180' fill='%234a5a75' font-size='20' text-anchor='middle' font-family='monospace'%3E等待影像串流%3C/text%3E%3C/svg%3E">
+        <div class="video-overlay">
+          <span id="video-topic">topic: -</span>
+          <span id="video-fps">-</span>
+        </div>
+      </div>
+      <p class="hint">
+        影像來源：rosbridge WebSocket（<code>/rosbridge</code>）；
+        實際影像 stream 需由 fsm_node / 模擬器於 Step 3 發佈。
+      </p>
+
+      <h2>巡檢統計</h2>
+      <div class="stat-grid" id="stat-grid">載入中…</div>
+    </section>
+
+    <!-- ============ 右欄：事件日誌 ============ -->
+    <section class="panel">
+      <h2>巡檢事件日誌</h2>
+      <div class="controls">
+        <select id="filter-event">
+          <option value="">全部事件</option>
+          <option value="task_start">任務開始</option>
+          <option value="button_press">按鈕確認</option>
+          <option value="map_switch">地圖切換</option>
+          <option value="elevator_call">呼叫電梯</option>
+          <option value="nav_result">導航結果</option>
+          <option value="error">錯誤</option>
+        </select>
+        <select id="filter-floor">
+          <option value="">全部樓層</option>
+        </select>
+        <button id="refresh-btn">重新整理</button>
+      </div>
+      <div id="log-list" class="log-list">載入中…</div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

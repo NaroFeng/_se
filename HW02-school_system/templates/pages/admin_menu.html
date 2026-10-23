@@ -1,0 +1,66 @@
+<section class="content-placeholder">
+  <h1>{% if user.role == 'admin' %}系統管理 — 選單管理{% else %}此頁面僅限管理員{% endif %}</h1>
+  {% if user.role == 'admin' %}
+<section class="admin-shell">
+  <aside class="admin-list-wrapper">
+    <h3>選單結構</h3>
+    <p class="muted">點擊任一節點載入到右側編輯；點「＋ 新增子節點」建立子層。</p>
+    <div class="admin-tree-actions">
+      <button class="btn btn-ghost" type="button" id="admin-add-root">＋ 新增頂層節點</button>
+      <button class="btn btn-ghost" type="button" id="admin-refresh">重新整理</button>
+    </div>
+    <ul class="admin-tree" id="admin-menu-tree" aria-label="管理用選單樹"></ul>
+  </aside>
+
+  <form class="admin-form" id="admin-menu-form">
+    <h3 id="admin-form-title">新增選單節點</h3>
+    <input type="hidden" name="id" />
+    <label>
+      <span>顯示名稱 (label)</span>
+      <input type="text" name="label" required maxlength="80" />
+    </label>
+    <label>
+      <span>路由 (route，可空；空表示這是資料夾節點)</span>
+      <input type="text" name="route" placeholder="/page/..." />
+    </label>
+    <label>
+      <span>圖示 (icon 名稱)</span>
+      <input type="text" name="icon" list="icon-options" placeholder="例如：book" />
+      <datalist id="icon-options">
+        <option value="home"></option><option value="megaphone"></option>
+        <option value="book"></option><option value="grade"></option>
+        <option value="tools"></option><option value="shield"></option>
+        <option value="doc"></option><option value="list"></option>
+        <option value="search"></option><option value="calendar"></option>
+        <option value="trophy"></option><option value="edit"></option>
+        <option value="menu"></option><option value="user"></option>
+      </datalist>
+    </label>
+    <label>
+      <span>排序 (sort_order，數字越小越前)</span>
+      <input type="number" name="sort_order" value="0" />
+    </label>
+    <label>
+      <span>所需角色 (required_role)</span>
+      <select name="required_role">
+        <option value="student">student (學生)</option>
+        <option value="teacher">teacher (教師)</option>
+        <option value="admin">admin (管理員)</option>
+      </select>
+    </label>
+    <label>
+      <span>父節點 (parent_id，留空為頂層)</span>
+      <input type="text" name="parent_id" placeholder="留空 = 頂層；或填數字 ID" />
+    </label>
+    <p class="admin-form-error" data-role="error" hidden></p>
+    <div class="actions">
+      <button class="btn btn-ghost" type="button" id="admin-form-reset">清空</button>
+      <button class="btn btn-ghost" type="button" id="admin-form-delete" hidden>刪除</button>
+      <button class="btn btn-primary" type="submit">儲存</button>
+    </div>
+  </form>
+</section>
+  {% else %}
+    <p class="muted">目前角色為 <code>{{ user.role }}</code>，請切換為 admin 體驗。</p>
+  {% endif %}
+</section>

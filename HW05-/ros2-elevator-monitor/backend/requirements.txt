@@ -1,0 +1,21 @@
+# =====================================================================
+# web-backend (FastAPI) Python 相依套件
+# Python 3.11 / Debian bookworm-slim
+# =====================================================================
+
+# --- Web 框架 ---
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+
+# --- 設定管理 ---
+pydantic==2.7.4
+pydantic-settings==2.2.1
+
+# --- ORM / 資料庫 ---
+SQLAlchemy==2.0.30
+psycopg[binary]==3.1.19
+alembic==1.13.1
+
+# --- HTTP Client（呼叫 ros2-bridge REST 控制埠）---
+httpx==0.27.0

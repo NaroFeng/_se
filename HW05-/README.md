@@ -1,4 +1,4 @@
-﻿# HW5 — ROS 2 跨樓層巡檢機器人監控後台系統
+# HW5 — ROS 2 跨樓層巡檢機器人監控後台系統
 
 > 現代軟體工程 · HW5 · 以 Docker 微服務架構打造 ROS 2 AMR 的跨樓層巡檢與電梯搭乘監控系統
 
@@ -221,6 +221,168 @@ web-backend 提供兩種取得狀態的方式，優先使用延遲較低者：
 
 ---
 
+### 5.7 硬體抽象層與車載邊緣端（WP 0）
+
+目標：讓 `fsm_node.py` 的**核心狀態機邏輯完全不需要修改**，
+就能在模擬環境與實體硬體之間切換。
+
+#### 硬體架構
+
+| 元件 | 規格 | 對應介面 |
+|---|---|---|
+| 底盤 | IKEA 推車改裝**麥克納姆輪**，平面全向移動 | `MecanumBaseInterface` |
+| 視覺 | USB 羅技視訊鏡頭（`/dev/video0`），Eye-in-Hand 掛於推桿旁 | `CameraInterface` |
+| 按壓／觸覺 | 線性推桿 + 彈簧微動開關，由 MCU（`/dev/ttyUSB0`）控制 | `ActuatorInterface` |
+| 車載電腦 | 樹莓派（ARM64）或迷你電腦（AMD64） | `docker-compose.edge.yml` |
+
+#### 為什麼需要麥克納姆輪
+
+傳統差速底盤要對準按鈕必須「轉向 → 前進 → 再轉向」，
+在狹窄的電梯廳裡容易撞到門框。
+麥克納姆輪支援**原地全向平移**，只要一句
+`linear.y = offset_x_px × PIXEL_TO_METER` 就能微調對準，無需轉身。
+
+#### 四種硬體模式
+
+| 模式 | 相機 | 推桿 | 底盤 | 適用情境 |
+|---|---|---|---|---|
+| `mock`（預設） | 模擬 | 模擬 | 模擬 | 開發、CI、Demo |
+| `hybrid` | **真實**（OpenCV） | 模擬 | 模擬 | 辦公室先驗證視覺管線 |
+| `gazebo` | Gazebo / 偽感測器 | 模擬節點 | `/cmd_vel` | **Digital Twin 仿真** |
+| `real` | 真實 | **真實**（Serial） | **真實**（`/cmd_vel`） | 實體硬體整合 |
+
+#### 降級策略
+
+若選了真實模式但硬體不可用（裝置不存在、OpenCV 未安裝、pyserial 缺失），
+HAL 會**自動降級為 mock** 並記錄警告，確保機器人仍可安全執行。
+知識共享與硬體都是「增強」，不應該成為單點故障。
+
+#### 電梯門判斷：LiDAR 正前方中位數
+
+```python
+front = self._front_median_distance()   # 正前方扇區中位數
+door_open = front >= 2.0                # >2.0m 開、<1.2m 關
+```
+
+採用**中位數**而非最大值：最大值會被角落縫隙誤觸發，
+中位數對單點雜訊與偶發漏測穩健，且語意正確（「正前方淨空距離」）。
+
+#### 雲邊分離部署
+
+```bash
+# .env
+BACKEND_URL=http://192.168.1.100:8000   # 中央伺服器（後端 + 資料庫）
+HARDWARE_MODE=real
+ROBOT_NAME=amr-jetson-01
+
+docker compose -f docker-compose.edge.yml up -d --build
+```
+
+**職責切分**：低延遲控制迴路留在車端（避免雲端往返延遲影響安全），
+知識與經驗集中在雲端（不同機台共用學習成果）。
+
+---
+
+### 5.8 Digital Twin 仿真環境（專題報告用）
+
+策略：**先仿真、後實機**。在 Gazebo 中建立數位孿生環境，
+讓 Web 儀表板、中央大腦與狀態機能直接驅動模擬環境完成端到端展示，
+同時平行採購實體硬體。
+
+#### 為什麼刻意「不」做多樓層物理升降
+
+| 做法 | 問題 |
+|---|---|
+| Gazebo 中建三層樓板 + 電梯井剛體升降 | **穿模**（機器人穿過樓地板）、接觸力學不穩定、參數難調、每次執行結果不一致 |
+| 電梯升降由 `elevator_sim_node` 狀態機決定 | **可重現、可解釋**、秒級啟動、CI 可跑 |
+
+世界檔只建「**單層電梯廳 + 走廊**」，機器人只做平面運動；
+跨樓層切換由模擬節點的狀態機處理。
+資訊一律透過**標準 ROS 2 topic** 流動，機器人分不出對接的是 Gazebo 還是實機。
+
+#### 電梯模擬節點狀態機
+
+```mermaid
+stateDiagram-v2
+    [*] --> CLOSED
+    CLOSED --> OPENING: 收到 /actuator/cmd press<br/>+ SIM_CALL_DELAY 秒
+    OPENING --> OPEN: 門板滑開
+    OPEN --> CLOSING: FSM 進入 ENTERING_ELEVATOR
+    CLOSING --> CLOSED: 門板關閉
+    CLOSED --> MOVING: FSM 進入 MOVING_FLOOR
+    MOVING --> OPENING: 抵達目標樓層<br/>更新 current_floor
+```
+
+#### 偽 LiDAR：讓門開關「真的被感知到」
+
+`elevator_sim_node` 發佈 `sensor_msgs/LaserScan`，
+正前方淨空距離隨門狀態連續變化：
+
+| 門狀態 | 正前方中位數 | 機器人判斷 |
+|---|---|---|
+| 門關 | **1.0 m** | `< 2.0m` → 門關 |
+| 門開中 | 1.0 → 3.5 m 漸變 | — |
+| 門全開 | **3.5 m** | `≥ 2.0m` → 門開 |
+
+因此 `WAITING_ELEVATOR → ENTERING_ELEVATOR` 轉移是被**真實觸發**的，
+而非腳本直接呼叫。
+
+#### 偽相機：讓視覺辨識在無 GUI 也能跑
+
+`elevator_sim_node` 產生 1920×1080 的按鈕面板影像，
+被呼叫的樓層按鈕會「點亮」（高亮度），其餘為暗色，
+讓 OpenCV Template Matching 在 Headless 模式同樣可運作。
+
+#### Headless 閉環測試（不需 Gazebo）
+
+```bash
+# 啟動（僅模擬節點 + 狀態機 + 按鈕辨識，秒級就緒）
+ros2 launch elevator_inspection elevator_sim_headless.launch.py
+
+# 另一個終端機執行驗證
+python3 scripts/verify_digital_twin.py
+```
+
+`verify_digital_twin.py` 涵蓋 7 個階段：
+感測器就緒 → 門關驗證 → 視覺辨識 → 觸覺確認 →
+**電梯開門（LiDAR 距離真實變化）** → 進車廂跨樓駛出 → 巡檢完成標記。
+
+#### 完整 Gazebo 模式（視覺化展示）
+
+```bash
+# 含 GUI（需 DISPLAY）
+ros2 launch elevator_inspection gazebo_elevator.launch.py gui:=true
+
+# Headless Gazebo（Docker / 報告現場無顯示器）
+ros2 launch elevator_inspection gazebo_elevator.launch.py gui:=false
+```
+
+Docker 映像預設**不含** Gazebo（省約 500 MB），需要時：
+
+```bash
+docker compose build --build-arg INSTALL_GAZEBO=true ros2-bridge
+```
+
+#### 機器人模型要點（`ikea_mecanum_bot.urdf.xacro`）
+
+| 項目 | 規格 |
+|---|---|
+| 結構 | IKEA 推車三層式：底層 0.18m（電池+電腦）、中層 0.50m、頂層 **0.85m**（相機+推桿） |
+| 全向移動 | `libgazebo_ros_planar_move.so`：`linear.x`（進出電梯）、`linear.y`（**橫移對準按鈕**）、`angular.z`；發佈 `/odom` |
+| RGB 相機 | 頂層，發佈 `/camera/color/image_raw`，1920×1080 @15Hz |
+| 2D LiDAR | 發佈 `/scan`，360 束，用於判斷電梯門開關 |
+| 線性推桿 | Prismatic Joint（沿 +Y 伸出，水平前推按壓按鈕） |
+| 麥克納姆輪 | 四輪滾子 45° 螺旋排列（左右反向），產生全向力 |
+
+#### 世界場景尺度（`campus_elevator.world`）
+
+依學校大樓實測：走廊寬 2.4m、淨高 2.9m、電梯門框 1.2×2.1m、車廂深 2.4m、
+按鈕面板中心高 **1.10m**（機器人相機 0.85m 可完整拍攝 7 顆按鈕）。
+
+門板為**兩片獨立模型**，由模擬節點透過 `/elevator/door_cmd` 驅動，
+**無需編寫 C++ plugin**（奧卡姆剃刀）。
+
+---
 ## 六、資料庫設計
 
 ### 6.1 ER 圖
@@ -610,15 +772,51 @@ docker compose exec -T db psql -U elevator elevator_monitor < backup.sql
 
 ---
 
-## 十二、實作進度
 
 | 步驟 | 內容 | 狀態 |
 |---|---|---|
 | **Step 1** | 專案骨架、Dockerfile、環境變數 | ✅ 完成 |
 | **Step 2** | PostgreSQL Schema 與種子資料、FastAPI 後端 | ✅ 完成 |
-| **Step 3** | ROS 2 FSM 狀態機（`fsm_node.py`）、按鈕辨識（`button_recognizer.py`） | 🔄 進行中 |
+| **Step 3** | ROS 2 FSM 狀態機（`fsm_node.py`）、按鈕辨識（`button_recognizer.py`） | ✅ 完成 |
 | **Step 4** | Nginx 反向代理、監控儀表板頁面 | ✅ 完成 |
 | **Step 5** | `docker-compose.yml` 整合 4 個微服務 | ✅ 完成 |
+| **Step 6** | 中央大腦：知識共享與按鈕參數自適應閉環 | ✅ 完成 |
+| **WP 0** | 硬體抽象層（HAL）與車載邊緣端預備 | ✅ 完成 |
+| **WP 1** | Digital Twin：Gazebo 數位孿生仿真環境 | ✅ 完成 |
+
+### Step 3 端到端驗證結果
+
+四個容器全部 `healthy`，`GET http://localhost:8080/health` 回傳
+`{ "status": "ok", "fsm_online": true, "fsm_subscribers": 1 }`。
+
+**1F → 3F → 5F 跨樓層巡檢實測**：完整走過 8 個狀態轉移，
+**29 / 29 筆事件成功寫入 PostgreSQL（0 失敗）**。
+
+### Step 6 中央大腦閉環驗證
+
+`amr-proto-01` 回報 `attempt=2`（重試才成功）→ 中央大腦自動更新
+`press 1200→1350ms`、`threshold 0.80→0.79` →
+`amr-proto-02` 首次執行即拉取更新後參數並 `attempt=1` 一次成功。
+
+**防單向漂移驗證**：`2500ms` 經 8 次成功後收斂回 `1420ms`，而非卡在極限值。
+
+驗證腳本：`python scripts/verify_central_brain.py`
+
+### WP 1 Digital Twin 交付內容
+
+| 項目 | 內容 |
+|---|---|
+| 機器人模型 | `urdf/ikea_mecanum_bot.urdf.xacro`（IKEA 三層推車 + 麥克納姆輪 + 相機 + LiDAR + 推桿） |
+| 世界場景 | `worlds/campus_elevator.world`（走廊 + 電梯廳 + 滑門 + 按鈕面板 7 顆） |
+| 電梯模擬 | `elevator_sim_node`（6 狀態機：CLOSED / OPENING / OPEN / CLOSING / MOVING） |
+| 偽感測器 | 偽 LiDAR（門關 1.0m → 門開 3.5m）、偽相機（按鈕點亮） |
+| Launch | `elevator_sim_headless.launch.py`（免 Gazebo）、`gazebo_elevator.launch.py`（完整仿真） |
+| 驗證腳本 | `scripts/verify_digital_twin.py`（7 階段閉環驗證） |
+
+**Headless 閉環的關鍵設計**：電梯門開關完全由 `elevator_sim_node` 決定，
+但資訊一律透過**標準 ROS 2 topic** 流動（`/actuator/cmd`、`/scan`、`/elevator/sim_state`），
+因此 `fsm_node` 的狀態轉移是被**真實觸發**而非腳本強迫呼叫，
+驗證腳本扮演的是「真實感測器」的角色。
 
 ---
 

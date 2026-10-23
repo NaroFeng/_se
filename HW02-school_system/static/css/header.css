@@ -1,0 +1,67 @@
+.app-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--header-height);
+  padding: 0 var(--space-5);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header-title strong {
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.header-title span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.semester-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 4px 10px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+}
+
+.user-info {
+  font-size: 14px;
+  color: var(--color-text);
+}

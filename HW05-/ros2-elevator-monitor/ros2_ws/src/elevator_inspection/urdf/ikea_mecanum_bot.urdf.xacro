@@ -1,0 +1,358 @@
+<?xml version="1.0" ?>
+<!--
+  IKEA 麥克納姆輪巡檢車（ikea_mecanum_bot.urdf.xacro）
+
+  幾何結構：模擬 IKEA BEKVÄM 層架推車的三層式結構
+    ├─ 底層（z=0.18）：電池 + 車載電腦
+    ├─ 中層（z=0.50）：貨物平台
+    └─ 頂層（z=0.85）：RGB 相機 + 線性推桿（Eye-in-Hand）
+
+  全向移動：libgazebo_ros_planar_move.so
+    原生支援 /cmd_vel 的 linear.x（前後）、linear.y（左右橫移，對準按鈕）、
+    angular.z（旋轉），並發佈 /odom。
+
+  感測器：
+    ├─ /camera/color/image_raw  頂層 RGB 相機（對準電梯按鈕面板高度 0.85m）
+    └─ /scan                    前方 2D LiDAR（判斷電梯門開關距離變化）
+
+  推桿：Prismatic Joint（可選配，用視覺化連桿表示按壓動作）
+
+  注意（奧卡姆剃刀）：刻意不建多層樓梯與電梯井剛體，
+  以免穿模與接觸力學不穩定。樓層切換由 elevator_sim_node 處理，
+  機器人只需在單層走廊中做平面運動。
+-->
+<robot name="ikea_mecanum_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ==================== 參數 ==================== -->
+  <xacro:property name="base_width"  value="0.52"/>
+  <xacro:property name="base_length" value="0.78"/>
+  <xacro:property name="deck_thickness" value="0.03"/>
+
+  <!-- 三層高度 -->
+  <xacro:property name="deck1_z" value="0.18"/>
+  <xacro:property name="deck2_z" value="0.50"/>
+  <xacro:property name="deck3_z" value="0.85"/>
+
+  <!-- 麥克納姆輪 -->
+  <xacro:property name="wheel_radius"   value="0.065"/>
+  <xacro:property name="wheel_width"    value="0.04"/>
+  <xacro:property name="wheel_x_offset" value="0.24"/>
+  <xacro:property name="wheel_y_offset" value="0.22"/>
+
+  <!-- 感測器 -->
+  <xacro:property name="camera_height" value="0.85"/>
+  <xacro:property name="lidar_height"  value="0.32"/>
+  <xacro:property name="lidar_offset_z" value="0.55"/>
+
+  <!-- ==================== 材質 ==================== -->
+  <material name="ikea_wood">
+    <color rgba="0.85 0.72 0.55 1.0"/>
+  </material>
+  <material name="metal_frame">
+    <color rgba="0.35 0.37 0.40 1.0"/>
+  </material>
+  <material name="battery_box">
+    <color rgba="0.15 0.17 0.20 1.0"/>
+  </material>
+  <material name="wheel_black">
+    <color rgba="0.12 0.12 0.13 1.0"/>
+  </material>
+  <material name="wheel_roller">
+    <color rgba="0.85 0.60 0.10 1.0"/>
+  </material>
+  <material name="sensor_body">
+    <color rgba="0.10 0.10 0.12 1.0"/>
+  </material>
+  <material name="camera_lens">
+    <color rgba="0.05 0.08 0.15 1.0"/>
+  </material>
+  <material name="actuator_rod">
+    <color rgba="0.75 0.78 0.82 1.0"/>
+  </material>
+
+  <!-- ==================== 輪子巨集（麥克納姆輪：45° 滾子） ============ -->
+  <xacro:macro name="mecanum_wheel" params="prefix x y flip">
+    <link name="${prefix}_wheel">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="wheel_black"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <!-- 滾子（麥克納姆輪特徵：45° 螺旋排列） -->
+      <visual>
+        <origin xyz="0 ${wheel_radius*0.55} ${wheel_radius*0.45}" rpy="${pi/2} ${pi/4 if flip=='1' else -pi/4} 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius*0.22}" length="${wheel_width*0.9}"/>
+        </geometry>
+        <material name="wheel_roller"/>
+      </visual>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel"/>
+      <origin xyz="${x} ${y} ${wheel_radius}" rpy="0 0 ${pi if flip=='1' else 0}"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ==================== 底盤 ==================== -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${deck1_z}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_width} ${base_length} ${deck_thickness}"/>
+      </geometry>
+      <material name="ikea_wood"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${deck1_z}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_width} ${base_length} ${deck_thickness}"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- 四顆麥克納姆輪（左/右前後，滾子方向相反以產生全向力） -->
+  <xacro:mecanum_wheel prefix="fl_wheel" x="${wheel_x_offset}"  y="${wheel_y_offset}" flip="1"/>
+  <xacro:mecanum_wheel prefix="fr_wheel" x="${wheel_x_offset}"  y="-${wheel_y_offset}" flip="0"/>
+  <xacro:mecanum_wheel prefix="rl_wheel" x="-${wheel_x_offset}" y="${wheel_y_offset}" flip="0"/>
+  <xacro:mecanum_wheel prefix="rr_wheel" x="-${wheel_x_offset}" y="-${wheel_y_offset}" flip="1"/>
+
+  <!-- ==================== 車身層架（IKEA 三層推車）==================== -->
+  <link name="deck_mid">
+    <visual>
+      <origin xyz="0 0 ${deck2_z}" rpy="0 0 0"/>
+      <geometry><box size="${base_width} ${base_length} ${deck_thickness}"/></geometry>
+      <material name="ikea_wood"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${deck2_z}" rpy="0 0 0"/>
+      <geometry><box size="${base_width} ${base_length} ${deck_thickness}"/></geometry>
+    </collision>
+  </link>
+  <joint name="deck_mid_joint" type="fixed">
+    <parent link="base_link"/><child link="deck_mid"/>
+  </joint>
+
+  <link name="deck_top">
+    <visual>
+      <origin xyz="0 0 ${deck3_z}" rpy="0 0 0"/>
+      <geometry><box size="${base_width} ${base_length} ${deck_thickness}"/></geometry>
+      <material name="ikea_wood"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${deck3_z}" rpy="0 0 0"/>
+      <geometry><box size="${base_width} ${base_length} ${deck_thickness}"/></geometry>
+    </collision>
+  </link>
+  <joint name="deck_top_joint" type="fixed">
+    <parent link="deck_mid"/><child link="deck_top"/>
+  </joint>
+
+  <!-- 層架立柱（四角） -->
+  <link name="post_fl">
+    <visual>
+      <origin xyz="${base_width/2-0.02} ${base_length/2-0.02} 0.5" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.015" length="0.68"/></geometry>
+      <material name="metal_frame"/>
+    </visual>
+  </link>
+  <joint name="post_fl_joint" type="fixed">
+    <parent link="base_link"/><child link="post_fl"/>
+  </joint>
+
+  <!-- 電池 + 車載電腦（底層） -->
+  <link name="compute_box">
+    <visual>
+      <origin xyz="0 -0.22 ${deck1_z + 0.14}" rpy="0 0 0"/>
+      <geometry><box size="0.34 0.26 0.24"/></geometry>
+      <material name="battery_box"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.22 ${deck1_z + 0.14}" rpy="0 0 0"/>
+      <geometry><box size="0.34 0.26 0.24"/></geometry>
+    </collision>
+  </link>
+  <joint name="compute_box_joint" type="fixed">
+    <parent link="base_link"/><child link="compute_box"/>
+  </joint>
+
+  <!-- ==================== RGB 相機（Eye-in-Hand，掛於推桿旁）==================== -->
+  <link name="camera_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.05 0.09 0.04"/></geometry>
+      <material name="sensor_body"/>
+    </visual>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="deck_top"/>
+    <child link="camera_link"/>
+    <origin xyz="0.20 0.0 ${camera_height - deck3_z}"/>
+  </joint>
+
+  <link name="camera_optical_link"/>
+
+  <!-- ==================== 線性推桿（Prismatic Joint）==================== -->
+  <!-- 可選配：實機上由 MCU 控制，仿真中以視覺化連桿表示按壓動作 -->
+  <link name="actuator_base">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.06 0.06 0.08"/></geometry>
+      <material name="metal_frame"/>
+    </visual>
+  </link>
+  <joint name="actuator_base_joint" type="fixed">
+    <parent link="deck_top"/>
+    <child link="actuator_base"/>
+    <origin xyz="0.30 0.14 ${deck3_z + deck_thickness/2 + 0.04}"/>
+  </joint>
+
+  <link name="actuator_rod">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 ${pi/2}"/>
+      <geometry><cylinder radius="0.008" length="0.18"/></geometry>
+      <material name="actuator_rod"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 ${pi/2}"/>
+      <geometry><cylinder radius="0.008" length="0.18"/></geometry>
+    </collision>
+  </link>
+  <joint name="actuator_rod_joint" type="prismatic">
+    <parent link="actuator_base"/>
+    <child link="actuator_rod"/>
+    <!-- 沿 +Y 方向伸出（水平前推，模擬按壓電梯按鈕） -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.02" upper="0.12" effort="50.0" velocity="0.2"/>
+  </joint>
+
+  <!-- 推桿前端（接觸電梯按鈕的面） -->
+  <link name="actuator_tip">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.05 0.015 0.05"/></geometry>
+      <material name="wheel_roller"/>
+    </visual>
+  </link>
+  <joint name="actuator_tip_joint" type="fixed">
+    <parent link="actuator_rod"/>
+    <child link="actuator_tip"/>
+    <origin xyz="0 0.09 0"/>
+  </joint>
+
+  <!-- ==================== 2D LiDAR ==================== -->
+  <link name="laser_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.035" length="0.045"/></geometry>
+      <material name="sensor_body"/>
+    </visual>
+  </link>
+  <joint name="laser_joint" type="fixed">
+    <parent link="deck_top"/>
+    <child link="laser_link"/>
+    <origin xyz="0.24 0.0 ${lidar_height}"/>
+  </joint>
+
+  <!-- ==================== Gazebo 感測器與控制插件 ==================== -->
+
+  <!-- 底盤全向移動插件：支援 linear.x / linear.y / angular.z -->
+  <gazebo>
+    <plugin name="mecanum_planar_move"
+            filename="libgazebo_ros_planar_move.so">
+      <odometryTopic>/odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <robotBaseFrame>base_link</robotBaseFrame>
+      <commandTopic>/cmd_vel</commandTopic>
+      <leftWheelJoint>fl_wheel_joint</leftWheelJoint>
+      <rightWheelJoint>fr_wheel_joint</rightWheelJoint>
+      <leftWheelSeparator>rl_wheel_joint</leftWheelSeparator>
+      <rightWheelSeparator>rr_wheel_joint</rightWheelSeparator>
+      <wheelSeparation>${2*wheel_y_offset}</wheelSeparation>
+      <wheelWidth>${wheel_width}</wheelWidth>
+      <radius>${wheel_radius}</radius>
+      <odometrySource>encoder</odometrySource>
+      <publishOdomTF>true</publishOdomTF>
+      <publishRobotDescription>false</publishRobotDescription>
+    </plugin>
+  </gazebo>
+
+  <!-- RGB 相機：發佈 /camera/color/image_raw -->
+  <gazebo reference="camera_link">
+    <sensor type="camera" name="camera_sensor">
+      <update_rate>15</update_rate>
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near><far>12.0</far>
+        </clip>
+      </camera>
+      <plugin name="camera_controller"
+              filename="libgazebo_ros_camera.so">
+        <baseline>0.0</baseline>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>15</updateRate>
+        <cameraName>camera</cameraName>
+        <imageTopicName>/camera/color/image_raw</imageTopicName>
+        <cameraInfoTopicName>/camera/color/camera_info</cameraInfoTopicName>
+        <frameName>camera_optical_link</frameName>
+        <hackBaseline>0.0</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- 2D LiDAR：發佈 /scan（用於判斷電梯門開關） -->
+  <gazebo reference="laser_link">
+    <sensor type="ray" name="laser_sensor">
+      <update_rate>12</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>${-pi}</min_angle>
+            <max_angle>${pi}</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.05</min>
+          <max>12.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.015</stddev>
+        </noise>
+      </ray>
+      <plugin name="laser_controller"
+              filename="libgazebo_ros_laser.so">
+        <topicName>/scan</topicName>
+        <frameName>laser_frame</frameName>
+        <updateRate>12</updateRate>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+</robot>

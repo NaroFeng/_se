@@ -1,0 +1,22 @@
+<section class="content-placeholder">
+  <h1>我的成績</h1>
+  <p class="muted">本學期（114 學年度第 2 學期）成績（示意）。</p>
+  <table class="data-table">
+    <thead>
+      <tr><th>科目</th><th>學分</th><th>分數</th><th>等第</th></tr>
+    </thead>
+    <tbody>
+      {% for g in demo_grades %}
+        <tr>
+          <td>{{ g.name }}</td>
+          <td>{{ g.credits }}</td>
+          <td><strong>{{ g.score }}</strong></td>
+          <td>{{ g.grade }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="3" style="text-align:right">學期平均：</th><th>{{ demo_avg }}</th></tr>
+    </tfoot>
+  </table>
+</section>

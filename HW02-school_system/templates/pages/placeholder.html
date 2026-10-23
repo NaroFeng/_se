@@ -1,0 +1,13 @@
+<section class="content-placeholder placeholder-card">
+  <header class="placeholder-header">
+    {% if icon %}<span class="placeholder-icon">{{ {'home':'🏠','megaphone':'📣','book':'📚','grade':'🏆','tools':'🛠️','shield':'🛡️','doc':'📄','list':'📋','search':'🔍','calendar':'📅','trophy':'🏅','edit':'✏️','menu':'🧭','user':'👤','course':'🎓','add':'➕','plus':'✚','minus':'➖','result':'📊','stop':'🛑','general':'📚','manual':'✍️','over':'⬆️','under':'⬇️','program':'📘','warning':'⚠️','history':'🕓','waiver':'🔁','info':'ℹ️','plan':'🗺️','teacher':'👨‍🏫','room':'🏫','class':'👥','audit':'✅','reply':'↩️','leave':'🚪','cross':'🔀','micro':'🔬','minor':'🎭','affairs':'🏛️','attendance':'📅','reward':'🏅','money':'💰','army':'🪖','people':'👥'}.get(icon, '📄') }}</span>{% endif %}
+    <h1>{{ title }}</h1>
+  </header>
+  <p class="muted">此頁面為選單結構示意，實際功能尚未串接後端 API。</p>
+  <dl class="placeholder-meta">
+    <dt>路由</dt><dd><code>{{ route }}</code></dd>
+    <dt>使用者</dt><dd>{{ user.display_name }}（{{ user.department }}）</dd>
+    <dt>角色</dt><dd><span class="badge">{{ user.role }}</span></dd>
+  </dl>
+  <p class="muted">如需體驗已實作的頁面，可從左側選單選擇「公告訊息」、「首頁」或（admin 角色下）「系統管理」。</p>
+</section>

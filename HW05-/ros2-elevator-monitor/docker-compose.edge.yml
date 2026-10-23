@@ -1,0 +1,148 @@
+# =====================================================================
+# 車載邊緣端部署（Cloud-Edge Split）
+#
+# 用途：在樹莓派（ARM64）或迷你電腦（AMD64）上「只」執行 ros2-bridge，
+#       連線至遠端中央伺服器（後端 + 資料庫）。
+#
+# 為什麼這樣切？
+#   中央伺服器負責：樓層/按鈕知識、巡檢日誌、參數自適應學習（Central Brain）
+#   車載邊緣端負責：ROS 2 節點、硬體抽象層（HAL）、即時控制迴路
+#   低延遲控制留在車端（避免雲端往返延遲影響安全），
+#   知識與經驗集中在雲端（不同機台共用學習成果）。
+#
+# 啟動：
+#   docker compose -f docker-compose.edge.yml up -d --build
+#
+# 必要設定（.env 或環境變數）：
+#   BACKEND_URL=http://<中央伺服器IP>:8000    # 中央大腦位置
+#   HARDWARE_MODE=mock|hybrid|real            # 依實機狀況決定
+# =====================================================================
+
+name: ros2-elevator-edge
+
+services:
+  # =================================================================
+  # ros2-bridge（車載）：ROS 2 Humble + 硬體抽象層
+  # =================================================================
+  ros2-bridge:
+    build:
+      context: ./ros2_ws
+      dockerfile: Dockerfile
+    image: se-elevator/ros2-bridge:1.0.0
+    container_name: elevator-ros2-bridge
+    restart: unless-stopped
+
+    environment:
+      # ---- 中央大腦連線（雲端）----
+      # 注意：這裡必須填中央伺服器的實際 IP 或網域名稱，
+      #       不能用 compose 服務名（因為雲端服務不在本機）
+      BACKEND_URL: ${BACKEND_URL:?請設定 BACKEND_URL 為中央伺服器網址，例如 http://192.168.1.100:8000}
+      BACKEND_BASE_URL: ${BACKEND_URL:?請設定 BACKEND_URL}
+      BACKEND_CALLBACK_URL: ${BACKEND_URL:?請設定 BACKEND_URL}/api/v1/system/heartbeat
+      KNOWLEDGE_TTL_SEC: ${KNOWLEDGE_TTL_SEC:-300}
+
+      # ---- 機器人識別：每台機台不同，學習成果統一匯流至中央大腦 ----
+      ROBOT_NAME: ${ROBOT_NAME:-amr-proto-01}
+
+      # ---- ROS 2 網域：需與車上其他感測器一致 ----
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      ROSBRIDGE_WS_PORT: ${ROSBRIDGE_WS_PORT:-9090}
+      ROS_BRIDGE_REST_PORT: ${ROS2_BRIDGE_PORT:-8080}
+
+      # ---- 硬體抽象層（WP 0）----
+      # mock   : 完全模擬（開發/CI，無需硬體）
+      # hybrid : 相機用真實影像、推桿與底盤仍模擬（辦公室先驗證視覺）
+      # real   : 全部真實硬體
+      HARDWARE_MODE: ${HARDWARE_MODE:-mock}
+
+      # USB 視訊鏡頭（Logitech Webcam）
+      CAMERA_DEVICE: ${CAMERA_DEVICE:-/dev/video0}
+      CAMERA_INDEX: ${CAMERA_INDEX:-0}
+      CAMERA_WIDTH: ${CAMERA_WIDTH:-1920}
+      CAMERA_HEIGHT: ${CAMERA_HEIGHT:-1080}
+      BUTTON_TEMPLATE_DIR: ${BUTTON_TEMPLATE_DIR:-/maps/buttons}
+
+      # MCU（線性推桿 + 彈簧微動開關）
+      SERIAL_PORT: ${SERIAL_PORT:-/dev/ttyUSB0}
+      SERIAL_BAUD: ${SERIAL_BAUD:-115200}
+      FORCE_THRESHOLD_KG: ${FORCE_THRESHOLD_KG:-2.5}
+
+      # 麥克納姆輪底盤
+      MAX_LINEAR_Y: ${MAX_LINEAR_Y:-0.15}
+      PIXEL_TO_METER: ${PIXEL_TO_METER:-0.0005}
+      DOOR_WAIT_SEC: ${DOOR_WAIT_SEC:-30.0}
+
+      TZ: Asia/Taipei
+
+    # =================================================================
+    # 裝置掛載（選配）
+    #
+    # 掛載硬體裝置前，請先在主機確認裝置路徑：
+    #   ls -l /dev/video*        # 視訊鏡頭
+    #   ls -l /dev/ttyUSB* /dev/ttyACM*   # MCU 序列埠
+    #
+    # ── 視訊鏡頭（real/hybrid 模式需要）────────────────────────────
+    # devices:
+    #   - "/dev/video0:/dev/video0"
+    # # 需搭配 container 權限（見下方 devices 區塊）
+    #
+    # ── MCU 序列埠（real 模式需要）──────────────────────────────
+    # devices:
+    #   - "/dev/ttyUSB0:/dev/ttyUSB0"
+    #
+    # ── 或改用 group_add 方式（較推薦，權限較乾淨）────────────
+    # group_add:
+    #   - video      # /dev/video0
+    #   - dialout    # /dev/ttyUSB0、/dev/ttyACM0
+    #
+    devices:
+      - "/dev/video0:/dev/video0"    # USB 視訊鏡頭（Logitech）
+      - "/dev/ttyUSB0:/dev/ttyUSB0"  # MCU（Arduino / STM32）
+      - "/dev/ttyACM0:/dev/ttyACM0"  # MCU 備用裝置節點
+
+    # 讓容器內的 appuser 可操作 video / dialout 群組
+    group_add:
+      - video      # /dev/video0
+      - dialout    # /dev/ttyUSB0、/dev/ttyACM0
+
+    # 若使用相機或序列埠，建議提升 shm 以利影像緩衝
+    shm_size: "512mb"
+
+    ports:
+      # 車載本機除錯用；正式部署可移除以免暴露
+      - "${ROS2_BRIDGE_PORT:-8080}:8080"
+      - "${ROSBRIDGE_WS_PORT:-9090}:9090"
+
+    # =================================================================
+    # 健康檢查：確認 REST 端點存活
+    # =================================================================
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+    # =================================================================
+    # 常見除錯備註
+    # -----------------------------------------------------------------
+    # 1. 找不到 /dev/video0
+    #    → 確認主機可讀取：sudo usermod -aG video $USER（需重新登入）
+    #    → 部分機器需載入 uvcvideo 模組：sudo modprobe uvcvideo
+    #
+    # 2. /dev/ttyUSB0 權限不足
+    #    → sudo usermod -aG dialout $USER
+    #
+    # 3. 樹莓派上 SSH 連線後容器無法取得裝置
+    #    → 確認 udev 規則，或改以 group_add 方式授權
+    #
+    # 4. 網路延遲高
+    #    → 將 KNOWLEDGE_TTL_SEC 調大（如 600），減少向中央拉取頻率
+    #    → 確保 KNOWLEDGE_TTL_SEC > 0，TTL 到期前會沿用舊值不阻塞機器人
+    # =================================================================
+
+# =====================================================================
+# 車載端不需要網路（單一服務），故不宣告 networks；
+# 對外連線由預設 bridge 網路提供，可直連中央伺服器 IP。
+# =====================================================================

@@ -1,0 +1,17 @@
+<section class="content-placeholder">
+  <h1>公告訊息</h1>
+  <p class="muted">以下為 {{ school_name }} 最新公告，共 {{ announcements | length }} 則。</p>
+  <div class="announcement-list">
+    {% for a in announcements %}
+      <article class="announcement-card">
+        <span class="badge">{{ a.category }}</span>
+        <h3>{{ a.title }}</h3>
+        <div class="meta">發文：{{ a.author }} · {{ a.issued_at }}</div>
+        <p class="preview">{{ a.content[:80] }}…</p>
+        <div class="actions">
+          <a class="btn btn-outline" href="/page/announcement/{{ a.slug }}" data-route="/page/announcement/{{ a.slug }}">閱讀全文</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
