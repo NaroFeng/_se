@@ -1,5 +1,7 @@
 # SynapseBrain — Personal Context Compiler & Local Memory Graph
 
+🔙 [HW3 作業說明](../README.md)
+
 Single-user knowledge-graph app: nodes/edges in local SQLite, offline chat via
 Ollama, a compiler that turns top-weighted nodes into an external prompt
 (for Gemini/Claude), and an ingestion pipeline that parses
