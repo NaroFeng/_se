@@ -1,0 +1,16 @@
+# 強制所有文字檔案在工作樹中一律使用 LF 行尾。
+#
+# 原因：bin/cli.js 带有 `#!/usr/bin/env node` shebang，
+# 若在 Windows 上被轉成 CRLF，Unix / macOS 會無法執行該指令
+# （/usr/bin/env: 'node\r': No such file or directory）。
+#
+# 本檔案只作用於 HW07-/ 目錄，不影響儲存庫其他專案。
+* text=auto eol=lf
+
+# 明確標記為文字檔，避免被當成二進位檔處理
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf

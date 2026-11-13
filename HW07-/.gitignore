@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+npm-debug.log*
+package-lock.json.bak
+
+# npm pack 產生的封包
+*.tgz
+
+# 產生的編譯結果（由 `html-block build` 直接輸出到專案根目錄）
+/index.html
+/about.html
+
+# ★ 根目錄 .gitignore 內含 Python 的 `lib/` 規則，
+#   這裡重新納入本專案的核心程式碼資料夾，否則 lib/ 會被整個忽略。
+!lib/
