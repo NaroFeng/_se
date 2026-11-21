@@ -1,178 +1,1220 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>現代軟體工程 — 學生作業首頁</title>
-  <link rel="stylesheet" href="assets/style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現代軟體工程 · 期末成果展示 | 金門大學 資訊工程系</title>
+<meta name="description" content="金門大學資訊工程系 115 學年上學期「現代軟體工程」期末成果展示：7 個核心專案，涵蓋全端雲端、微服務、測試金字塔與 CLI 套件。">
+<meta name="author" content="馮至豪">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   現代軟體工程 · 期末成果展示 — 單檔自包含樣式
+   零外部依賴：純 CSS Grid / Flexbox / Custom Properties
+   ============================================================ */
+
+:root {
+  /* 投影機友善配色 */
+  --bg:        #F8FAFC;
+  --bg-elev:   #FFFFFF;
+  --bg-soft:   #F1F5F9;
+  --text:      #0F172A;
+  --text-mid:  #334155;
+  --text-mute: #64748B;
+  --border:    #E2E8F0;
+  --border-2:  #CBD5E1;
+  --accent:    #2563EB;
+  --accent-hv: #1D4ED8;
+  --accent-sf: #EFF6FF;
+  --accent-bd: #BFDBFE;
+
+  --ok:   #047857;
+  --ok-sf:#ECFDF5;
+  --warn: #B45309;
+  --v1:   #2563EB;
+  --v2:   #047857;
+  --v3:   #7C3AED;
+
+  --radius:   14px;
+  --radius-sm: 10px;
+  --max-w:    1180px;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Menlo", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+          "PingFang TC", "Hiragino Sans", "Microsoft JhengHei", "Microsoft YaHei", sans-serif;
+
+  --shadow:   0 1px 2px rgba(15,23,42,.05), 0 6px 18px rgba(15,23,42,.06);
+  --shadow-lg:0 10px 24px rgba(15,23,42,.10), 0 28px 60px rgba(15,23,42,.14);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 86px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body.modal-open { overflow: hidden; }
+
+h1, h2, h3, h4 { line-height: 1.35; margin: 0; font-weight: 800; letter-spacing: .01em; }
+p { margin: 0; }
+ul { margin: 0; padding-left: 1.15em; }
+li { margin-bottom: .5em; }
+code { font-family: var(--mono); font-size: .9em; }
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute; left: 12px; top: -60px; z-index: 999;
+  background: var(--accent); color: #fff; padding: 10px 18px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm); text-decoration: none;
+  transition: top .2s;
+}
+.skip-link:focus { top: 0; }
+
+.shell { width: 100%; max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+/* ============================ NAV ============================ */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,250,252,.92);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  display: flex; align-items: center; gap: 22px;
+  min-height: 66px; padding: 10px 24px;
+  max-width: var(--max-w); margin: 0 auto;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 800; font-size: 1.03rem; color: var(--text);
+  text-decoration: none; white-space: nowrap;
+}
+.brand-mark {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), #60A5FA);
+  color: #fff; font-size: 1.05rem; box-shadow: 0 2px 8px rgba(37,99,235,.35);
+}
+.nav-links { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; margin-left: auto; }
+.nav-links a {
+  display: block; padding: 8px 14px; border-radius: 8px;
+  color: var(--text-mid); text-decoration: none; font-weight: 600; font-size: .95rem;
+  transition: background .16s, color .16s;
+}
+.nav-links a:hover { background: var(--accent-sf); color: var(--accent-hv); }
+.nav-cta {
+  padding: 9px 16px; border-radius: 9px; background: var(--text); color: #fff;
+  text-decoration: none; font-weight: 700; font-size: .93rem; white-space: nowrap;
+  transition: background .16s, transform .16s;
+}
+.nav-cta:hover { background: var(--accent); transform: translateY(-1px); }
+
+/* ============================ HERO ============================ */
+.hero {
+  position: relative; overflow: hidden;
+  padding: 76px 0 56px;
+  background:
+    radial-gradient(1100px 460px at 12% -10%, #DBEAFE 0%, rgba(219,234,254,0) 62%),
+    radial-gradient(900px 420px at 92% 0%, #E0E7FF 0%, rgba(224,231,255,0) 60%),
+    var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 15px; border-radius: 999px;
+  background: var(--accent-sf); border: 1px solid var(--accent-bd);
+  color: var(--accent-hv); font-weight: 700; font-size: .9rem; letter-spacing: .02em;
+}
+.hero h1 {
+  margin: 20px 0 0;
+  font-size: clamp(2.1rem, 5.4vw, 3.5rem);
+  letter-spacing: -.02em;
+}
+.hero h1 .hl { color: var(--accent); }
+.hero-sub {
+  margin-top: 18px; max-width: 68ch;
+  font-size: clamp(1rem, 1.5vw, 1.16rem); color: var(--text-mid); line-height: 1.9;
+}
+.hero-sub strong { color: var(--text); }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+
+/* 數據摘要列 */
+.stat-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  margin-top: 42px;
+}
+.stat {
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow);
+  transition: transform .18s, box-shadow .18s;
+}
+.stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.stat-k { font-size: .87rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.stat-v { margin-top: 6px; font-size: 1.62rem; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
+.stat-d { margin-top: 6px; font-size: .93rem; color: var(--text-mute); line-height: 1.7; }
+
+/* ============================ BUTTONS ============================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 22px; border-radius: 10px; border: 1px solid transparent;
+  font-family: inherit; font-size: .98rem; font-weight: 700; line-height: 1.4;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background .16s, color .16s, border-color .16s, transform .16s, box-shadow .16s;
+}
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); color: #fff; box-shadow: 0 2px 10px rgba(37,99,235,.3); }
+.btn.primary:hover { background: var(--accent-hv); }
+.btn.ghost { background: var(--bg-elev); color: var(--text); border-color: var(--border-2); }
+.btn.ghost:hover { border-color: var(--accent); color: var(--accent-hv); background: var(--accent-sf); }
+.btn.sm { padding: 9px 15px; font-size: .89rem; }
+.btn:focus-visible { outline-offset: 2px; }
+
+/* ============================ SECTION ============================ */
+.section { padding: 68px 0; }
+.section + .section { border-top: 1px solid var(--border); }
+.section-head { margin-bottom: 30px; }
+.section-tag {
+  display: inline-block; padding: 4px 13px; border-radius: 999px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  color: var(--text-mid); font-size: .84rem; font-weight: 700; letter-spacing: .08em;
+}
+.section h2 { margin: 14px 0 0; font-size: clamp(1.55rem, 3.2vw, 2.15rem); letter-spacing: -.01em; }
+.section-lead { margin-top: 12px; max-width: 74ch; color: var(--text-mid); font-size: 1.02rem; }
+
+/* ====================== 焦點全端專案 ====================== */
+.focus-card {
+  position: relative; overflow: hidden;
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: 20px; box-shadow: var(--shadow-lg);
+}
+.focus-card::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 6px;
+  background: linear-gradient(90deg, var(--accent), #60A5FA 45%, var(--v3));
+}
+.focus-body {
+  display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px;
+  padding: 42px 44px 38px;
+}
+.focus-badge {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 6px 15px; border-radius: 999px;
+  background: var(--ok-sf); border: 1px solid #A7F3D0; color: var(--ok);
+  font-size: .89rem; font-weight: 800;
+}
+.live-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: #10B981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 2.2s infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  70%  { box-shadow: 0 0 0 9px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
+.focus-card h3 { margin: 16px 0 0; font-size: clamp(1.4rem, 2.7vw, 1.85rem); letter-spacing: -.01em; }
+.focus-pos { margin-top: 12px; color: var(--text-mid); font-size: 1.05rem; }
+.focus-list { margin: 20px 0 0; padding: 0; list-style: none; }
+.focus-list li {
+  position: relative; padding-left: 28px; margin-bottom: 12px;
+  color: var(--text-mid); font-size: .98rem;
+}
+.focus-list li::before {
+  content: "▸"; position: absolute; left: 4px; top: -1px;
+  color: var(--accent); font-weight: 800;
+}
+.focus-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+
+.focus-side {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 26px 26px 24px;
+}
+.focus-side h4 { font-size: .86rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); }
+.focus-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.metric {
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 13px 15px;
+}
+.metric-v { font-size: 1.24rem; font-weight: 800; color: var(--accent); letter-spacing: -.01em; }
+.metric-k { margin-top: 2px; font-size: .83rem; color: var(--text-mute); line-height: 1.55; }
+.focus-note {
+  margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border-2);
+  font-size: .9rem; color: var(--text-mute); line-height: 1.75;
+}
+
+/* ============================ 篩選列 ============================ */
+.filter-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 26px 0 28px;
+}
+.filter-label { font-size: .9rem; font-weight: 700; color: var(--text-mute); margin-right: 4px; }
+.chip {
+  padding: 9px 18px; border-radius: 999px;
+  border: 1px solid var(--border-2); background: var(--bg-elev); color: var(--text-mid);
+  font-family: inherit; font-size: .93rem; font-weight: 700; cursor: pointer;
+  transition: background .16s, color .16s, border-color .16s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent-hv); }
+.chip[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  box-shadow: 0 2px 8px rgba(37,99,235,.28);
+}
+.filter-count { margin-left: auto; font-size: .89rem; color: var(--text-mute); font-weight: 600; }
+
+/* ============================ 專案網格 ============================ */
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px;
+}
+.card {
+  display: flex; flex-direction: column;
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 26px 26px 24px;
+  box-shadow: var(--shadow); cursor: pointer;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+}
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent-bd); }
+.card.is-hidden { display: none; }
+.card:focus-visible { border-color: var(--accent); }
+
+.card-top { display: flex; align-items: center; gap: 10px; }
+.card-id {
+  padding: 4px 11px; border-radius: 7px;
+  background: var(--accent-sf); border: 1px solid var(--accent-bd);
+  color: var(--accent-hv); font-size: .82rem; font-weight: 800; letter-spacing: .06em;
+}
+.card-cat { font-size: .81rem; font-weight: 700; color: var(--text-mute); letter-spacing: .04em; }
+.card h3 { margin-top: 14px; font-size: 1.19rem; letter-spacing: -.01em; }
+.card-pos { margin-top: 9px; color: var(--text-mid); font-size: .95rem; line-height: 1.75; }
+.card-hl {
+  margin-top: 14px; padding: 11px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-soft); border-left: 3px solid var(--accent);
+  font-size: .89rem; color: var(--text-mid); line-height: 1.7;
+}
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.tag {
+  padding: 4px 10px; border-radius: 6px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  color: var(--text-mid); font-family: var(--mono); font-size: .8rem; font-weight: 600;
+}
+.card-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: auto; padding-top: 20px; }
+.card-meta {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-2);
+  font-size: .84rem; color: var(--text-mute); font-weight: 600;
+}
+
+/* ============================ 關於 ============================ */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.panel {
+  background: var(--bg-elev); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow);
+}
+.panel h3 { font-size: 1.1rem; }
+.kv { margin-top: 18px; }
+.kv-row {
+  display: grid; grid-template-columns: 132px 1fr; gap: 14px;
+  padding: 11px 0; border-bottom: 1px dashed var(--border);
+}
+.kv-row:last-child { border-bottom: 0; }
+.kv-k { font-weight: 700; color: var(--text-mute); font-size: .92rem; }
+.kv-v { color: var(--text); font-size: .96rem; }
+.kv-v a { text-decoration: none; font-weight: 600; }
+.kv-v a:hover { text-decoration: underline; }
+
+.timeline { margin-top: 18px; }
+.tl-item {
+  display: grid; grid-template-columns: 96px 1fr; gap: 16px;
+  padding: 12px 0; border-bottom: 1px dashed var(--border);
+}
+.tl-item:last-child { border-bottom: 0; }
+.tl-w { font-weight: 800; color: var(--accent); font-size: .92rem; }
+.tl-t { color: var(--text); font-weight: 700; font-size: .97rem; }
+.tl-d { color: var(--text-mute); font-size: .89rem; line-height: 1.7; }
+
+.keynote {
+  margin-top: 22px; padding: 16px 20px; border-radius: var(--radius-sm);
+  background: var(--accent-sf); border: 1px solid var(--accent-bd);
+  color: var(--accent-hv); font-size: .93rem; font-weight: 600; line-height: 1.75;
+}
+
+/* ============================ FOOTER ============================ */
+.footer {
+  border-top: 1px solid var(--border); background: var(--bg-elev);
+  padding: 34px 0; margin-top: 0;
+}
+.footer-inner {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;
+  max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
+}
+.footer p { font-size: .9rem; color: var(--text-mute); }
+.footer a { text-decoration: none; font-weight: 700; }
+.footer a:hover { text-decoration: underline; }
+.kbd {
+  display: inline-block; padding: 1px 8px; border-radius: 6px;
+  background: var(--bg-soft); border: 1px solid var(--border-2);
+  border-bottom-width: 2px;
+  font-family: var(--mono); font-size: .82em; color: var(--text-mid); font-weight: 700;
+}
+
+/* ============================ MODAL ============================ */
+.modal {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(15,23,42,.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.modal-dialog {
+  display: flex; flex-direction: column;
+  width: min(940px, 100%); max-height: min(88vh, 900px);
+  background: var(--bg-elev); border-radius: 18px;
+  box-shadow: var(--shadow-lg); overflow: hidden;
+  animation: pop .18s ease-out;
+}
+@keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@media (prefers-reduced-motion: reduce) { .modal-dialog { animation: none; } }
+
+.modal-head {
+  display: flex; align-items: flex-start; gap: 18px;
+  padding: 22px 26px 18px; border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+.modal-head-main { flex: 1; min-width: 0; }
+.modal-head .card-id { margin-bottom: 10px; display: inline-block; }
+.modal-head h3 { font-size: clamp(1.2rem, 2.2vw, 1.5rem); letter-spacing: -.01em; }
+.modal-head p { margin-top: 8px; color: var(--text-mid); font-size: .95rem; line-height: 1.75; }
+.modal-tools { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.counter {
+  padding: 6px 14px; border-radius: 999px;
+  background: var(--bg-elev); border: 1px solid var(--border-2);
+  font-family: var(--mono); font-size: .9rem; font-weight: 700; color: var(--text-mid);
+  white-space: nowrap;
+}
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border-2); background: var(--bg-elev);
+  color: var(--text-mid); font-size: 1.1rem; cursor: pointer;
+  transition: background .16s, color .16s, border-color .16s;
+}
+.icon-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.modal-body { padding: 26px; overflow-y: auto; overscroll-behavior: contain; }
+.m-sec + .m-sec { margin-top: 26px; }
+.m-sec h4 {
+  display: flex; align-items: center; gap: 9px;
+  font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
+  padding-bottom: 9px; border-bottom: 1px solid var(--border);
+}
+.m-sec h4::before { content: "■"; font-size: .6em; }
+.m-sec ul { margin-top: 14px; }
+.m-sec li { color: var(--text-mid); font-size: .97rem; }
+.m-sec li strong { color: var(--text); }
+.m-sec code, .m-body code {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  padding: 1px 6px; border-radius: 5px; color: var(--accent-hv); font-size: .88em;
+}
+.m-metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px;
+}
+.m-metric {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+}
+.m-metric .v { font-size: 1.3rem; font-weight: 800; color: var(--accent); letter-spacing: -.01em; }
+.m-metric .k { margin-top: 3px; font-size: .83rem; color: var(--text-mute); line-height: 1.6; }
+
+.modal-foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  padding: 16px 26px; border-top: 1px solid var(--border); background: var(--bg-soft);
+}
+.modal-foot .hint {
+  margin-left: auto; font-size: .84rem; color: var(--text-mute);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; border-radius: 9px;
+  border: 1px solid var(--border-2); background: var(--bg-elev); color: var(--text-mid);
+  font-family: inherit; font-size: .9rem; font-weight: 700; cursor: pointer;
+  transition: background .16s, color .16s, border-color .16s;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--accent-hv); background: var(--accent-sf); }
+
+/* ============================ RWD ============================ */
+@media (max-width: 980px) {
+  .focus-body { grid-template-columns: 1fr; gap: 28px; padding: 34px 26px 30px; }
+  .about-grid { grid-template-columns: 1fr; }
+  .stat-strip { grid-template-columns: 1fr; }
+  .focus-metrics { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+}
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .shell { padding: 0 18px; }
+  .hero { padding: 52px 0 42px; }
+  .section { padding: 52px 0; }
+  .nav-inner { flex-wrap: wrap; gap: 10px 14px; padding: 10px 18px; }
+  .nav-links { width: 100%; margin-left: 0; overflow-x: auto; padding-bottom: 2px; }
+  .nav-links a { padding: 7px 11px; font-size: .9rem; white-space: nowrap; }
+  .nav-cta { font-size: .86rem; padding: 8px 13px; }
+  .grid { grid-template-columns: 1fr; }
+  .modal { padding: 0; align-items: flex-end; }
+  .modal-dialog { max-height: 92vh; border-radius: 18px 18px 0 0; }
+  .modal-head { padding: 18px 18px 14px; }
+  .modal-body { padding: 20px 18px; }
+  .modal-foot { padding: 14px 18px; }
+  .modal-foot .hint { width: 100%; margin-left: 0; }
+  .counter { font-size: .82rem; padding: 5px 11px; }
+  .kv-row { grid-template-columns: 1fr; gap: 2px; }
+  .tl-item { grid-template-columns: 1fr; gap: 4px; }
+  .filter-count { margin-left: 0; width: 100%; }
+}
+@media print {
+  .nav, .modal, .filter-bar, .card-actions, .focus-actions { display: none !important; }
+  body { background: #fff; }
+}
+</style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="nav-inner">
-      <a class="brand" href="#top">📚 現代軟體工程</a>
+
+<a class="skip-link" href="#main">跳到主要內容</a>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">📚</span>
+      <span>現代軟體工程 · 期末成果</span>
+    </a>
+    <nav aria-label="主要導覽">
       <ul class="nav-links">
-        <li><a href="#hws">作業列表</a></li>
+        <li><a href="#focus">焦點專案</a></li>
+        <li><a href="#projects">課程專案</a></li>
         <li><a href="#about">關於</a></li>
       </ul>
-      <button class="theme-toggle" id="themeToggle" aria-label="切換主題">🌙</button>
-    </div>
-  </nav>
+    </nav>
+    <a class="nav-cta" href="https://github.com/NaroFeng/_se/" target="_blank" rel="noopener noreferrer">GitHub Repo ↗</a>
+  </div>
+</header>
 
-  <header class="hero" id="top">
-    <div class="hero-inner">
-      <p class="eyebrow">115 學年上學期 · 金門大學資工系</p>
-      <h1>現代軟體工程<br>作業總覽</h1>
-      <p class="subtitle">從殼層到底層,從協定到系統 — 一邊寫程式,一邊理解程式怎麼運作。</p>
+<main id="main">
+  <span id="top"></span>
+
+  <!-- ============================ HERO ============================ -->
+  <section class="hero">
+    <div class="shell">
+      <span class="eyebrow">📚 115 學年上學期 · 期末成果展示</span>
+      <h1>現代軟體工程<br><span class="hl">期末成果展示</span></h1>
+      <p class="hero-sub">
+        國立金門大學 資訊工程系（115 學年上學期）｜指導教授：陳鍾誠｜學生：<strong>馮至豪</strong>（學號 45）<br>
+        從最底層的 HTTP 協定，一路往上蓋到可上雲的全端系統 —— 每一個專案都附上自動化測試作為安全網。
+      </p>
       <div class="hero-actions">
-        <a class="btn primary" href="#hws">▶ 看所有作業</a>
-        <a class="btn ghost" href="HW01-curl/index.html">HW1 · 寫一個 curl</a>
+        <a class="btn primary" href="#projects">▶ 瀏覽 7 個核心專案</a>
+        <a class="btn ghost" href="https://github.com/NaroFeng/_se/" target="_blank" rel="noopener noreferrer">查看總 Repo ↗</a>
+      </div>
+
+      <!-- 數據摘要列 -->
+      <div class="stat-strip">
+        <div class="stat">
+          <div class="stat-k">核心專案</div>
+          <div class="stat-v">7 個</div>
+          <div class="stat-d">6 個課程實作（HW1／HW2／HW3／HW5／HW6／HW7）＋ 1 個已上雲的全端系統</div>
+        </div>
+        <div class="stat">
+          <div class="stat-k">技術涵蓋</div>
+          <div class="stat-v">全端雲端 · 微服務</div>
+          <div class="stat-d">測試金字塔 · CLI 套件 —— 從瀏覽器到 Worker 執行環境、從底層協定到機器人狀態機</div>
+        </div>
+        <div class="stat">
+          <div class="stat-k">程式碼</div>
+          <div class="stat-v">GitHub 公開</div>
+          <div class="stat-d">
+            <a href="https://github.com/NaroFeng/_se/" target="_blank" rel="noopener noreferrer">github.com/NaroFeng/_se ↗</a><br>
+            每個專案皆附原始碼、README 與可重跑的測試
+          </div>
+        </div>
       </div>
     </div>
-  </header>
+  </section>
 
-  <main>
-    <!-- ============ 作業列表 ============ -->
-    <section id="hws" class="section">
-      <h2>📂 作業列表</h2>
-      <p class="lead">本學期 12 次作業,從最底層的 HTTP 協定開始,一路往上蓋到軟體工程實務。</p>
-
-      <div class="hw-grid">
-        <!-- HW1 -->
-        <a class="hw-card done" href="HW01-curl/index.html">
-          <div class="hw-num">HW1</div>
-          <div class="hw-title">寫一個 curl</div>
-          <div class="hw-desc">用三種語言重新理解 HTTP — 從 Bash 呼叫、Python socket、PowerShell .NET 看見封包。</div>
-          <div class="hw-status"><span class="dot"></span>已完成</div>
-        </a>
-
-        <!-- HW2~HW12 (佔位) -->
-        <a class="hw-card" href="HW2-/">
-          <div class="hw-num">HW2</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW3-/">
-          <div class="hw-num">HW3</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW4-/">
-          <div class="hw-num">HW4</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW5-/">
-          <div class="hw-num">HW5</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card done" href="HW06-/">
-          <div class="hw-num">HW6</div>
-          <div class="hw-title">履歷問卷蒐集系統</div>
-          <div class="hw-desc">FastAPI + SQLite 的極簡系統，用 Unit / Web API / E2E 三層自動化測試完整護航。</div>
-          <div class="hw-status"><span class="dot"></span>已完成</div>
-        </a>
-
-        <a class="hw-card" href="HW7-/">
-          <div class="hw-num">HW7</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW8-/">
-          <div class="hw-num">HW8</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW9-/">
-          <div class="hw-num">HW9</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW10-/">
-          <div class="hw-num">HW10</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW11-/">
-          <div class="hw-num">HW11</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
-
-        <a class="hw-card" href="HW12-/">
-          <div class="hw-num">HW12</div>
-          <div class="hw-title">(主題待定)</div>
-          <div class="hw-desc">待補上學習目標與簡述。</div>
-          <div class="hw-status"><span class="dot"></span>規劃中</div>
-        </a>
+  <!-- ==================== 焦點全端專案 ==================== -->
+  <section class="section" id="focus">
+    <div class="shell">
+      <div class="section-head">
+        <span class="section-tag">FOCUS PROJECT</span>
+        <h2>焦點全端專案｜Cloudflare POS 點餐系統</h2>
+        <p class="section-lead">
+          唯一一個真正「上雲」的專案：同一份後端程式碼，同時跑在本機 Node.js 與 Cloudflare Worker 兩種執行環境上，
+          線上可直接操作，示範時不需要架任何環境。
+        </p>
       </div>
-    </section>
 
-    <!-- ============ 課程資訊 ============ -->
-    <section id="about" class="section">
-      <h2>🎓 關於這份作業</h2>
-      <p class="lead">金門大學資訊工程系 · 115 學年上學期 · 現代軟體工程。</p>
+      <article class="focus-card" data-open-modal="pos">
+        <div class="focus-body">
+          <div>
+            <span class="focus-badge"><span class="live-dot" aria-hidden="true"></span>已上雲 Live Demo · v1.2.0</span>
+            <h3>POS ＆ Online Ordering System</h3>
+            <p class="focus-pos">全端上雲的雙軌架構 POS 點餐系統 —— 同一份 <code>src/</code> 支援本機與雲端兩種執行環境。</p>
 
-      <div class="info-table">
-        <div class="info-row">
-          <div class="info-label">學期</div>
-          <div>115 學年上學期</div>
+            <ul class="focus-list">
+              <li><strong>雙軌架構</strong>：本機走 Node.js + <code>node:sqlite</code> + 磁碟 <code>uploads/</code>；雲端走 <code>workerd</code> + D1 base64 儲存 + Workers Static Assets。</li>
+              <li><strong>安全設計</strong>：bcrypt 憑證驗證（明文格式一律視為無效）、<code>pin_lookup</code> SHA-256 索引加速登入、<code>ALLOW_REMOTE_ADMIN</code> 遠端寫入隔離與權限降級。</li>
+              <li><strong>工程化</strong>：自建冪等遷移執行器（<code>schema_migrations</code> 記錄已套用檔案）、Unsplash 商品圖自動補齊。</li>
+              <li><strong>權限模型</strong>：Boss／Store Manager／Supervisor／Staff 四階級，權限由 <code>permissions</code> ＋ <code>role_permissions</code> 資料表驅動，前端動態渲染、後端 API 再驗一次。</li>
+            </ul>
+
+            <div class="focus-actions">
+              <a class="btn primary" href="https://pos-api.s111410545.workers.dev/order" target="_blank" rel="noopener noreferrer">▶ Live Demo · 線上點餐</a>
+              <a class="btn ghost" href="https://github.com/se-111410545/cloudflare_web" target="_blank" rel="noopener noreferrer">GitHub 原始碼 ↗</a>
+              <button class="btn ghost" type="button" data-open-modal="pos">架構講解</button>
+            </div>
+          </div>
+
+          <aside class="focus-side">
+            <h4>規模與驗證</h4>
+            <div class="focus-metrics">
+              <div class="metric"><div class="metric-v">4 級</div><div class="metric-k">角色權限階級</div></div>
+              <div class="metric"><div class="metric-v">5 個</div><div class="metric-k">D1 遷移檔（冪等）</div></div>
+              <div class="metric"><div class="metric-v">6 個</div><div class="metric-k">路由模組</div></div>
+              <div class="metric"><div class="metric-v">16 項</div><div class="metric-k">商品圖自動補齊</div></div>
+            </div>
+            <p class="focus-note">
+              檔案儲存刻意改為「本機檔案」而非 R2 —— 因為實測確認 <code>workerd</code> 沒有檔案系統，
+              <code>node:fs</code> 寫檔會直接報 <code>not implemented</code>。兩種環境以 <code>FileStorage</code> 介面統一。
+            </p>
+          </aside>
         </div>
-        <div class="info-row">
-          <div class="info-label">教師</div>
-          <div><a href="https://www.nqu.edu.tw/educsie/index.php?act=blog&code=list&ids=4" target="_blank" rel="noopener">陳鍾誠</a></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ==================== 課程實作專案 ==================== -->
+  <section class="section" id="projects">
+    <div class="shell">
+      <div class="section-head">
+        <span class="section-tag">COURSE PROJECTS</span>
+        <h2>課程實作專案</h2>
+        <p class="section-lead">
+          依序為本學期 6 份已完成作業。點任一張卡片可開啟「架構講解」詳情彈窗；
+          彈窗內可用 <span class="kbd">←</span> / <span class="kbd">→</span> 連續切換專案，方便上台不靠滑鼠講解。
+        </p>
+      </div>
+
+      <div class="filter-bar" role="group" aria-label="專案分類篩選">
+        <span class="filter-label">分類篩選</span>
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-filter="web" aria-pressed="false">Web 與系統</button>
+        <button class="chip" type="button" data-filter="ai" aria-pressed="false">AI 與機器人</button>
+        <button class="chip" type="button" data-filter="tool" aria-pressed="false">工具與底層</button>
+        <span class="filter-count" id="filterCount" aria-live="polite">顯示 6 / 6 個專案</span>
+      </div>
+
+      <div class="grid" id="projectGrid">
+
+        <!-- ============ HW1 ============ -->
+        <article class="card" data-category="tool" data-open-modal="hw1">
+          <div class="card-top">
+            <span class="card-id">HW1</span>
+            <span class="card-cat">工具與底層</span>
+          </div>
+          <h3>寫一個 curl</h3>
+          <p class="card-pos">跨語言手刻 HTTP GET Request，證明協定與語言無關。</p>
+          <div class="card-hl">三種語言實作同一個 GET：別人寫好的 C 執行檔 → 自己開 TCP／TLS → 換 .NET 重寫一次。</div>
+          <div class="tags">
+            <span class="tag">Bash</span><span class="tag">Python Socket</span><span class="tag">PowerShell .NET</span>
+          </div>
+          <div class="card-actions">
+            <a class="btn primary sm" href="./HW01-curl/index.html" target="_blank" rel="noopener noreferrer">互動展示頁 ↗</a>
+            <button class="btn ghost sm" type="button" data-open-modal="hw1">架構講解</button>
+            <a class="btn ghost sm" href="https://github.com/NaroFeng/_se/tree/main/HW01-curl" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+          <div class="card-meta">33 項自動化測試（10 Shell／9 Python／14 PowerShell）</div>
+        </article>
+
+        <!-- ============ HW2 ============ -->
+        <article class="card" data-category="web" data-open-modal="hw2">
+          <div class="card-top">
+            <span class="card-id">HW2</span>
+            <span class="card-cat">Web 與系統</span>
+          </div>
+          <h3>金門大學校務系統</h3>
+          <p class="card-pos">標準四層架構與完整自動化測試驗證的校務管理系統。</p>
+          <div class="card-hl">資料／服務／路由／前端四層分離；權限模型、CSV 批次匯入、AJAX partial 路由。</div>
+          <div class="tags">
+            <span class="tag">Flask 3</span><span class="tag">SQLite</span><span class="tag">Vanilla JS</span><span class="tag">pytest</span><span class="tag">Playwright</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn primary sm" type="button" data-open-modal="hw2">架構講解</button>
+            <a class="btn ghost sm" href="https://github.com/NaroFeng/_se/tree/main/HW02-school_system" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+          <div class="card-meta">pytest 106 ＋ node:test 17 ＋ Playwright E2E 5 支</div>
+        </article>
+
+        <!-- ============ HW3 ============ -->
+        <article class="card" data-category="ai" data-open-modal="hw3">
+          <div class="card-top">
+            <span class="card-id">HW3</span>
+            <span class="card-cat">AI 與機器人</span>
+          </div>
+          <h3>記憶圖譜 SynapseBrain</h3>
+          <p class="card-pos">結合本地 LLM 的「個人脈絡編譯器」與動態記憶圖譜。</p>
+          <div class="card-hl">圖譜 → 編譯成系統提示 → 解析 <code>brain-update</code> 回寫，「跟 AI 聊天」本身就是大腦生長。</div>
+          <div class="tags">
+            <span class="tag">FastAPI</span><span class="tag">SQLite</span><span class="tag">Vis-Network</span><span class="tag">Ollama</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn primary sm" type="button" data-open-modal="hw3">架構講解</button>
+            <a class="btn ghost sm" href="https://github.com/NaroFeng/_se/tree/main/HW03-" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+          <div class="card-meta">38 個測試函式 · 11 個 API 端點 · 事件驅動權重衰減</div>
+        </article>
+
+        <!-- ============ HW5 ============ -->
+        <article class="card" data-category="ai" data-open-modal="hw5">
+          <div class="card-top">
+            <span class="card-id">HW5</span>
+            <span class="card-cat">AI 與機器人</span>
+          </div>
+          <h3>ROS 2 跨樓層巡檢機器人</h3>
+          <p class="card-pos">4 微服務協作與 Digital Twin 仿真的自主跨樓層巡檢系統。</p>
+          <div class="card-hl">機器人自己搭電梯：按鈕視覺＋觸覺雙重確認、FSM 狀態機、跨樓層地圖切換。</div>
+          <div class="tags">
+            <span class="tag">ROS 2 Humble</span><span class="tag">FastAPI</span><span class="tag">PostgreSQL</span><span class="tag">Docker Compose</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn primary sm" type="button" data-open-modal="hw5">架構講解</button>
+            <a class="btn ghost sm" href="https://github.com/NaroFeng/_se/tree/main/HW05-" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+          <div class="card-meta">4 個微服務 · 跨樓層實測 29 / 29 事件寫入成功</div>
+        </article>
+
+        <!-- ============ HW6 ============ -->
+        <article class="card" data-category="web" data-open-modal="hw6">
+          <div class="card-top">
+            <span class="card-id">HW6</span>
+            <span class="card-cat">Web 與系統</span>
+          </div>
+          <h3>履歷問卷蒐集系統</h3>
+          <p class="card-pos">標準三層測試金字塔與網頁互動測試控制台實踐。</p>
+          <div class="card-hl">Unit／Web API／E2E 三層共用同一份驗證規則，<code>/test-docs</code> 頁面可直接在瀏覽器跑測試。</div>
+          <div class="tags">
+            <span class="tag">FastAPI</span><span class="tag">sqlite3</span><span class="tag">Tailwind CDN</span><span class="tag">pytest</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn primary sm" type="button" data-open-modal="hw6">架構講解</button>
+            <a class="btn ghost sm" href="https://github.com/NaroFeng/_se/tree/main/HW06-" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+          <div class="card-meta">43 個測試函式 · 97 個測試案例</div>
+        </article>
+
+        <!-- ============ HW7 ============ -->
+        <article class="card" data-category="tool" data-open-modal="hw7">
+          <div class="card-top">
+            <span class="card-id">HW7</span>
+            <span class="card-cat">工具與底層</span>
+          </div>
+          <h3>html-block-assembler</h3>
+          <p class="card-pos">已正式發佈至 npm 的初學者向建置期 HTML 區塊組裝 CLI。</p>
+          <div class="card-hl">把重複 HTML 拆成區塊檔，<code>&lt;block src="..."&gt;</code> 一行組裝；編譯輸出直接落在根目錄，路徑不用改。</div>
+          <div class="tags">
+            <span class="tag">Node.js 18+</span><span class="tag">node-html-parser</span><span class="tag">chokidar</span><span class="tag">npm CLI</span>
+          </div>
+          <div class="card-actions">
+            <a class="btn primary sm" href="https://www.npmjs.com/package/html-block-assembler" target="_blank" rel="noopener noreferrer">npm 套件頁 ↗</a>
+            <button class="btn ghost sm" type="button" data-open-modal="hw7">架構講解</button>
+            <a class="btn ghost sm" href="https://github.com/NaroFeng/_se/tree/main/HW07-" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          </div>
+          <div class="card-meta">3 個 CLI 指令 · 巢狀引用／slot／循環防護／嚴格語法檢查</div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ 關於 ============================ -->
+  <section class="section" id="about">
+    <div class="shell">
+      <div class="section-head">
+        <span class="section-tag">ABOUT</span>
+        <h2>課程資訊與作業歷程</h2>
+      </div>
+
+      <div class="about-grid">
+        <div class="panel">
+          <h3>📋 課程資訊</h3>
+          <div class="kv">
+            <div class="kv-row"><div class="kv-k">學期</div><div class="kv-v">115 學年上學期</div></div>
+            <div class="kv-row"><div class="kv-k">課程</div><div class="kv-v">現代軟體工程</div></div>
+            <div class="kv-row"><div class="kv-k">學校</div><div class="kv-v">國立金門大學 資訊工程系</div></div>
+            <div class="kv-row"><div class="kv-k">指導教授</div><div class="kv-v">陳鍾誠</div></div>
+            <div class="kv-row"><div class="kv-k">學生</div><div class="kv-v">馮至豪（學號 45）</div></div>
+            <div class="kv-row"><div class="kv-k">總 Repo</div><div class="kv-v"><a href="https://github.com/NaroFeng/_se/" target="_blank" rel="noopener noreferrer">github.com/NaroFeng/_se ↗</a></div></div>
+          </div>
+          <p class="keynote">
+            期末展示精選 <strong>7 個核心專案</strong>；每個專案的技術細節都以原始碼 README 為唯一事實來源，
+            頁面上的數據皆可對回 repository 驗證。
+          </p>
         </div>
-        <div class="info-row">
-          <div class="info-label">學校</div>
-          <div><a href="https://www.nqu.edu.tw/educsie/index.php" target="_blank" rel="noopener">金門大學資訊工程系</a></div>
-        </div>
-        <div class="info-row">
-          <div class="info-label">學生</div>
-          <div>馮至豪</div>
-        </div>
-        <div class="info-row">
-          <div class="info-label">學號</div>
-          <div>45</div>
+
+        <div class="panel">
+          <h3>🗓️ 作業歷程</h3>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-w">HW1</div><div><div class="tl-t">寫一個 curl</div><div class="tl-d">從殼層到底層，重新理解 HTTP 協定</div></div></div>
+            <div class="tl-item"><div class="tl-w">HW2</div><div><div class="tl-t">金門大學校務系統</div><div class="tl-d">分層架構、權限模型、批次匯入與自動化測試</div></div></div>
+            <div class="tl-item"><div class="tl-w">HW3</div><div><div class="tl-t">記憶圖譜 SynapseBrain</div><div class="tl-d">個人情境編譯器與本機記憶圖譜</div></div></div>
+            <div class="tl-item"><div class="tl-w">HW5</div><div><div class="tl-t">ROS 2 跨樓層巡檢機器人</div><div class="tl-d">微服務架構、FSM 建模與 Digital Twin 仿真</div></div></div>
+            <div class="tl-item"><div class="tl-w">HW6</div><div><div class="tl-t">履歷問卷蒐集系統</div><div class="tl-d">Unit／Web API／E2E 三層測試金字塔</div></div></div>
+            <div class="tl-item"><div class="tl-w">HW7</div><div><div class="tl-t">html-block-assembler</div><div class="tl-d">發佈至 npm 的建置期 HTML 區塊組裝 CLI</div></div></div>
+            <div class="tl-item"><div class="tl-w">Focus</div><div><div class="tl-t">Cloudflare POS 點餐系統 v1.2.0</div><div class="tl-d">雙軌架構全端上雲 POS 與線上點餐系統</div></div></div>
+          </div>
         </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
+</main>
 
-  <footer class="footer">
-    <p>現代軟體工程 · 115 上 · 學生作業首頁</p>
-    <p class="footer-meta">HTML 頁面設計給 GitHub Pages 使用</p>
-  </footer>
+<!-- ============================ FOOTER ============================ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <p>現代軟體工程 · 115 上 · 金門大學資訊工程系 · 期末成果展示</p>
+    <p>
+      簡報快捷鍵：<span class="kbd">Esc</span> 關閉彈窗　<span class="kbd">←</span> <span class="kbd">→</span> 切換專案
+      ｜ <a href="https://github.com/NaroFeng/_se/" target="_blank" rel="noopener noreferrer">GitHub Repo ↗</a>
+    </p>
+  </div>
+</footer>
 
-  <script>
-    const btn = document.getElementById('themeToggle');
-    const root = document.documentElement;
-    btn.addEventListener('click', () => {
-      root.classList.toggle('dark');
-      btn.textContent = root.classList.contains('dark') ? '☀️' : '🌙';
-      localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light');
-    });
-    if (localStorage.getItem('theme') === 'dark') {
-      root.classList.add('dark');
-      btn.textContent = '☀️';
+<!-- ============================ MODAL ============================ -->
+<div class="modal" id="projectModal" hidden>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle" id="modalDialog">
+    <div class="modal-head">
+      <div class="modal-head-main">
+        <span class="card-id" id="modalBadge">HW</span>
+        <h3 id="modalTitle">專案標題</h3>
+        <p id="modalPosition">專案定位</p>
+      </div>
+      <div class="modal-tools">
+        <span class="counter" id="modalCounter" aria-live="polite">1 / 7</span>
+        <button class="icon-btn" type="button" id="modalClose" aria-label="關閉（Esc）">✕</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <section class="m-sec">
+        <h4>核心架構亮點</h4>
+        <ul id="modalHighlights"></ul>
+      </section>
+
+      <section class="m-sec">
+        <h4>技術棧</h4>
+        <div class="tags" id="modalTech"></div>
+      </section>
+
+      <section class="m-sec">
+        <h4>測試／規模驗證</h4>
+        <div class="m-metrics" id="modalMetrics"></div>
+      </section>
+    </div>
+
+    <div class="modal-foot">
+      <button class="nav-btn" type="button" id="modalPrev">← 上一個</button>
+      <button class="nav-btn" type="button" id="modalNext">下一個 →</button>
+      <div id="modalLinks" class="tags"></div>
+      <div class="hint">
+        <span class="kbd">Esc</span> 關閉　<span class="kbd">←</span> <span class="kbd">→</span> 切換專案
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ==========================================================
+     專案資料（單一事實來源，內容皆對照各專案 README）
+     ========================================================== */
+  var PROJECTS = [
+    {
+      id: "pos",
+      badge: "FOCUS · v1.2.0",
+      title: "Cloudflare POS ＆ Online Ordering System",
+      position: "全端上雲的雙軌架構 POS 點餐系統 —— 同一份 src/ 支援本機與雲端兩種執行環境。",
+      highlights: [
+        "<strong>雙軌架構</strong>：本機以 Node.js + <code>node:sqlite</code> 直開 wrangler 的 SQLite，檔案寫入 <code>uploads/</code> 磁碟；雲端以 <code>workerd</code> 執行，檔案改存 D1 <code>uploads</code> 表（base64 TEXT），前端由 Workers Static Assets 提供並支援 SPA fallback。",
+        "<strong>FileStorage 抽象層</strong>：<code>LocalDiskStorage</code> 與 <code>D1BlobStorage</code> 實作同一組 <code>put / get / delete</code> 介面，<code>createStorage(env)</code> 依環境自動解析。",
+        "<strong>為什麼不用 R2</strong>：實測確認 workerd 沒有檔案系統，<code>node:fs</code> 寫檔會拋 <code>not implemented</code>；D1 若存 BLOB 會在序列化成回應時失真，故改存 base64 字串完整往返。",
+        "<strong>憑證安全</strong>：密碼與 PIN 一律以 bcrypt（bcryptjs，Worker 相容）雜湊；<code>verifySecret()</code> 遇到非 bcrypt 格式一律視為無效，絕不進行明文比對，舊種子資料的明文 PIN 自動失效。",
+        "<strong>登入加速</strong>：bcrypt 隨機鹽無法用 <code>WHERE pin_code = ?</code> 查找，故另存 SHA-256 的 <code>pin_lookup</code> 供索引定位候選員工，驗證權威仍是 bcrypt。",
+        "<strong>權限環境隔離</strong>：<code>admin-guard</code> 依 hostname 判定本機／線上；線上未設 <code>ALLOW_REMOTE_ADMIN</code> 時封鎖高風險寫入，並把 Boss 一併降級為 Store Manager 後重新判權限。",
+        "<strong>工程化遷移</strong>：自建 <code>scripts/migrate.mjs</code> 以 <code>__dirname</code> 推導專案根目錄，並在 D1 建立 <code>schema_migrations</code> 記錄已套用檔案，確保遷移冪等。",
+        "<strong>動態權限 UI</strong>：權限唯一真實來源為 <code>permissions</code> 與 <code>role_permissions</code> 兩張表，前端 <code>usePermissions()</code> 取得自身權限清單後才渲染按鈕，後端 <code>checkPermission()</code> 再驗一次防繞過。"
+      ],
+      tech: ["Hono (Workers)", "Cloudflare D1", "React", "Node.js", "node:sqlite", "bcryptjs", "JWT (jose)"],
+      metrics: [
+        { v: "4 級", k: "角色權限階級：Boss／Manager／Supervisor／Staff" },
+        { v: "5 個", k: "D1 遷移檔（schema_migrations 冪等記錄）" },
+        { v: "6 個", k: "後端路由模組：auth／admin／products／orders／uploads／public" },
+        { v: "16 項", k: "商品圖片自動補齊（Unsplash → D1／磁碟）" }
+      ],
+      links: [
+        { label: "▶ Live Demo · 線上點餐", href: "https://pos-api.s111410545.workers.dev/order", primary: true },
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/se-111410545/cloudflare_web" }
+      ]
+    },
+    {
+      id: "hw1",
+      badge: "HW1",
+      title: "寫一個 curl",
+      position: "跨語言手刻 HTTP GET Request，證明協定與語言無關。",
+      highlights: [
+        "<strong>三個版本同一個 GET request</strong>：<code>fetch.sh</code>（Bash，底層是別人寫好的 C 執行檔）、<code>fetch_raw.py</code>（Python，自己開 TCP / TLS / 組 HTTP）、<code>fetch_raw.ps1</code>（PowerShell .NET，換 <code>TcpClient</code> + <code>SslStream</code>）。",
+        "<strong>核心論點</strong>：v2 與 v3 的邏輯完全一樣 —— 證明 HTTP 協定本身跟語言無關，換語言只是換實作方式。",
+        "<strong>網頁版內容</strong>：HTTP request / response 拆解（method / path / headers 彩色高亮）、<code>curl -v</code> 真實抓封包的動畫演示、三版本從黑盒子到白盒子的設計理念、OSI / TCP / TLS 分層示意圖。",
+        "<strong>參考資料</strong>：RFC 7230 / 7231（HTTP/1.1）、RFC 8446（TLS 1.3）與 Python 官方 socket 文件。"
+      ],
+      tech: ["Bash", "Python Socket", "PowerShell .NET", "TCP", "TLS"],
+      metrics: [
+        { v: "33 項", k: "自動化測試總數" },
+        { v: "10 / 9 / 14", k: "Shell ／ Python unittest ／ PowerShell 三層測試" },
+        { v: "3 種", k: "同一 GET request 的實作語言" }
+      ],
+      links: [
+        { label: "互動展示網頁版 ↗", href: "./HW01-curl/index.html", primary: true },
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/NaroFeng/_se/tree/main/HW01-curl" }
+      ]
+    },
+    {
+      id: "hw2",
+      badge: "HW2",
+      title: "金門大學校務系統",
+      position: "標準四層架構與完整自動化測試驗證的校務管理系統。",
+      highlights: [
+        "<strong>四層分離</strong>：資料層（<code>models/db.py</code>）、服務層（<code>services/</code>）、路由層（<code>routes/</code>）、前端組件（<code>static/js/components/</code>）互不越界。",
+        "<strong>資料驅動左側選單</strong>：<code>Sidebar.renderNodes()</code> 純遞迴渲染、不寫死 HTML；server 端另有 Jinja fallback，client-side JS 再接管互動。",
+        "<strong>即時搜尋與狀態記憶</strong>：<code>filterTree</code> 純函式過濾、<code>highlight</code> 以 <code>&lt;mark&gt;</code> 高亮，展開集合與隱藏狀態存 <code>localStorage</code>。",
+        "<strong>AJAX partial 路由</strong>：<code>/page/&lt;subpath&gt;</code> 依 <code>X-Requested-With</code> 判斷回 partial 或完整頁，並支援 <code>popstate</code> 瀏覽器上一頁／下一頁。",
+        "<strong>權限模型與防呆</strong>：student / teacher / admin 三級；不可降級或停用最後一個啟用中的 admin、不可刪除自己。",
+        "<strong>CSV 批次匯入</strong>：支援中文別名、UTF-8 BOM（Excel 直接開）、multipart／<code>text/csv</code>／JSON 三種上傳格式，並提供列級錯誤報告；匯出不包含密碼。",
+        "<strong>效能</strong>：6 個索引覆蓋 username / email / role / status / department / year_enrolled，grade 欄位不落庫而是以入學年即時計算。"
+      ],
+      tech: ["Flask 3", "SQLite", "Vanilla JS", "pytest", "Playwright", "node:test"],
+      metrics: [
+        { v: "106 項", k: "後端 pytest 測試" },
+        { v: "17 項", k: "前端 node:test 單元測試" },
+        { v: "5 支", k: "Playwright 瀏覽器 E2E 旅程" },
+        { v: "3000+ 筆", k: "資料規模驗證（分頁 < 3ms、篩選 < 2ms）" }
+      ],
+      links: [
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/NaroFeng/_se/tree/main/HW02-school_system", primary: true }
+      ]
+    },
+    {
+      id: "hw3",
+      badge: "HW3",
+      title: "記憶圖譜 SynapseBrain",
+      position: "結合本地 LLM 的「個人脈絡編譯器」與動態記憶圖譜。",
+      highlights: [
+        "<strong>三段閉環</strong>：① 圖譜 —— 把「我在學 Docker」「我偏好 Python」「這是公司硬性規則」拆成帶權重的節點與有語意的邊，存在本機 SQLite；② 編譯 —— 權重最高的 N 個節點編譯成可直接貼給外部 AI 的系統提示；③ 回寫 —— 解析 AI 回覆中的 <code>brain-update</code> JSON 寫回圖譜。",
+        "<strong>記憶不是塞給模型，而是編譯給模型</strong>：提示詞有優先順序、長度上限與約束條款，並在最後附上 Ingestion Protocol，要求模型回覆末尾附一段 fenced block。",
+        "<strong>防禦性解析</strong>：真實 8B 模型不會照格式產出，解析器同時應對「自訂標籤、裸 JSON、帶前置廢話、無關 code fence」四種形狀；候選必須能 parse 成帶 list 型別欄位的物件，並以正規化 JSON 去重避免重複寫入。",
+        "<strong>事件驅動權重衰減</strong>：每次節點被加權時，其他 <code>topic</code> / <code>skill</code> 節點權重 × 0.98（下限 0.1）；<code>persona</code> 與 <code>rule</code> 永不衰減，因為核心人設與硬約束不該因最近沒提到就淡出。",
+        "<strong>記憶萃取 best-effort</strong>：跑在自己的 task、有自己的 timeout 與 token 上限，失敗或逾時只寫進 <code>memory.error</code>，絕不中斷串流或丟掉使用者已收到的回覆。",
+        "<strong>動態埠與單一真相來源</strong>：伺服器從 8800 往後掃到 8820 取第一個空閒 port，實際綁到的埠寫入 <code>.port</code> 檔，腳本與 CI 不必靠猜。",
+        "<strong>零建置前端</strong>：原生 ES modules + 力導向圖函式庫本地內嵌（CDN 僅備援），離線環境也能開圖。"
+      ],
+      tech: ["FastAPI", "SQLite", "Vis-Network", "Ollama", "SSE", "pytest"],
+      metrics: [
+        { v: "38 個", k: "測試函式（tmp_path 沙盒隔離）" },
+        { v: "11 個", k: "API 端點（圖譜／編譯／匯入／聊天）" },
+        { v: "2 張", k: "資料表：nodes / edges（外鍵串聯刪除）" },
+        { v: "8800–8820", k: "動態埠掃描範圍" }
+      ],
+      links: [
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/NaroFeng/_se/tree/main/HW03-", primary: true }
+      ]
+    },
+    {
+      id: "hw5",
+      badge: "HW5",
+      title: "ROS 2 跨樓層巡檢機器人",
+      position: "4 微服務協作與 Digital Twin 仿真的自主跨樓層巡檢系統。",
+      highlights: [
+        "<strong>4 個微服務</strong>：<code>web-frontend</code>（Nginx 代理 <code>/api/*</code> 與 <code>/rosbridge</code>）、<code>web-backend</code>（FastAPI 業務邏輯與記憶體快取）、<code>ros2-bridge</code>（rosbridge + 巡檢 FSM）、<code>db</code>（PostgreSQL 15），以 Docker Compose 編排。",
+        "<strong>Web ↔ ROS 雙通道</strong>：WebSocket（rosbridge 9090）走即時狀態與影像串流，REST（8080）走控制指令，兩條通道都經 Nginx 代理，前端只對同一網域發送請求。",
+        "<strong>跨樓層狀態機</strong>：IDLE → NAV_TO_ELEVATOR → DETECT_BUTTON → PRESS_BUTTON → WAIT_ELEVATOR → ENTER_ELEVATOR → RIDE_ELEVATOR → EXIT_ELEVATOR → SWITCH_MAP → NAV_TO_TARGET → INSPECTING，每次轉移都寫入巡檢日誌。",
+        "<strong>按鈕視覺＋觸覺雙重確認</strong>：以 Template Matching 比對相似度、門檻預設 0.75，之後再由力感測器／行程開關回報是否確實觸發；兩者不一致即中止並記錄警告，避免「自信地按錯樓層」。",
+        "<strong>Digital Twin</strong>：Gazebo 數位孿生環境，偽 LiDAR 讓門開關「真的被感知到」（門關 1.0m → 門開 3.5m）、偽相機讓被叫的樓層按鈕點亮；7 階段 headless 閉環驗證不需 GUI。",
+        "<strong>中央大腦閉環</strong>：機器人回報失敗次數後，中央大腦自動調高按壓時長、放寬視覺門檻；並驗證 2500ms 經 8 次成功後收斂回 1420ms，防止單向漂移。",
+        "<strong>硬體抽象層 HAL</strong>：<code>mock / hybrid / gazebo / real</code> 四種模式，硬體不可用時自動降級為 mock —— 知識共享與硬體都是增強，不該成為單點故障。"
+      ],
+      tech: ["ROS 2 Humble", "FastAPI", "PostgreSQL", "Docker Compose", "Nginx", "OpenCV"],
+      metrics: [
+        { v: "4 個", k: "微服務容器（全部 healthy）" },
+        { v: "29 / 29", k: "1F→3F→5F 跨樓層巡檢事件寫入成功" },
+        { v: "7 / 49", k: "樓層數 ／ 按鈕特徵種子資料" },
+        { v: "4 種", k: "HAL 硬體模式（可自動降級）" }
+      ],
+      links: [
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/NaroFeng/_se/tree/main/HW05-", primary: true }
+      ]
+    },
+    {
+      id: "hw6",
+      badge: "HW6",
+      title: "履歷問卷蒐集系統",
+      position: "標準三層測試金字塔與網頁互動測試控制台實踐。",
+      highlights: [
+        "<strong>測試金字塔三層</strong>：Unit（純函式）／ Web API（httpx TestClient）／ E2E（Playwright 瀏覽器旅程），三層共用同一份 <code>validators.py</code> 業務規則，規則只有一份。",
+        "<strong>驗證邏輯刻意不 import FastAPI</strong>：只用標準函式庫，因此能乾淨地做單元測試；Email 必須剛好一個 <code>@</code>、年資嚴格為 <code>int</code>（排除 <code>bool</code>）且介於 0–50。",
+        "<strong>副檔名白名單</strong>：以<strong>最後一個</strong>副檔名比對 <code>.jpg/.jpeg/.png/.webp</code>，因此 <code>photo.jpg.exe</code> 這種雙副檔名繞過手法會被擋下。",
+        "<strong>網頁互動測試控制台</strong>：<code>/test-docs</code> 頁面提供指令卡片與「一鍵在瀏覽器執行測試」，並支援有頭慢動作模式，讓桌面真的彈出 Chromium 視窗觀看自動填表。",
+        "<strong>零污染測試隔離</strong>：<code>tmp_path</code> 沙盒資料庫與上傳目錄、匯入順序先設環境變數再 <code>import</code> 模組、網頁執行器的子行程再包一層臨時目錄 —— 測試絕不寫入正式資料。",
+        "<strong>防呆：避免測試再觸發測試</strong>：子行程一律帶 <code>RESUME_RUN_TESTS_ACTIVE=1</code> 標記，端點偵測到即回 409，前端顯示紅燈而不是假裝成功。",
+        "<strong>奧卡姆剃刀取捨</strong>：單表 CRUD 用原生 <code>sqlite3</code> 而非 ORM、前端不打包（沒有建置步驟就不會有建置壞掉的一天）、檔名以 UUID4 取代原始檔名主體。"
+      ],
+      tech: ["FastAPI", "sqlite3", "Tailwind CDN", "pytest", "httpx", "Playwright"],
+      metrics: [
+        { v: "43 個", k: "測試函式" },
+        { v: "97 個", k: "測試案例" },
+        { v: "3 層", k: "Unit ／ Web API ／ E2E" },
+        { v: "1 張", k: "資料表 submissions" }
+      ],
+      links: [
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/NaroFeng/_se/tree/main/HW06-", primary: true }
+      ]
+    },
+    {
+      id: "hw7",
+      badge: "HW7",
+      title: "html-block-assembler",
+      position: "已正式發佈至 npm 的初學者向建置期 HTML 區塊組裝 CLI。",
+      highlights: [
+        "<strong>解決什麼問題</strong>：把重複的 HTML（導覽列、頁尾、卡片…）拆成獨立區塊檔，在<strong>建置期</strong>自動組裝成完整網頁 —— 不需框架、不需理解複雜相對路徑、不需處理子目錄。",
+        "<strong>輸出直接落在專案根目錄</strong>：所以 <code>src=\"images/pic.jpg\"</code> 組裝後不需要改路徑；且永遠只做同名單點覆寫，絕不清空輸出目錄。",
+        "<strong>三種組裝語法</strong>：屬性參數插值 <code>{{title}}</code> 與預設值 <code>{{title | 首頁}}</code>、<code>&lt;slot&gt;</code> 內容插槽、區塊之間的巢狀引用。",
+        "<strong>嚴格語法規範</strong>：<code>&lt;block /&gt;</code> 自閉合與未閉合一律視為語法錯誤，因為 HTML5 會把它當成開啟標籤、導致後續整頁被吞掉；工具只取代掉那個不合法標籤本身，後面的內容完整保留。",
+        "<strong>循環引用防護</strong>：偵測到 A → B → A 即印出呼叫鏈並中止該區塊的展開，不會卡死；找不到區塊則留下醒目錯誤提示框，整個建置不中斷。",
+        "<strong>Watch 模式的關鍵細節</strong>：只監聽 <code>src/</code> 底下的 <code>.html</code>，絕不監聽根目錄的 <code>.html</code>，否則編譯產出的 <code>index.html</code> 會再次觸發 watch 形成無限迴圈。",
+        "<strong>DOM 與語法檢查的分工</strong>：區塊展開 100% 由 DOM/AST 驅動、不使用 Regex 解析標籤；不合法寫法另外走原始碼層級的字元掃描器專門抓出。"
+      ],
+      tech: ["Node.js 18+", "node-html-parser", "chokidar", "picocolors", "util.parseArgs", "npm CLI"],
+      metrics: [
+        { v: "npm 已上線", k: "套件名 html-block-assembler" },
+        { v: "3 個", k: "CLI 指令：init / build / watch" },
+        { v: "v18.3.0+", k: "Node.js 最低需求（util.parseArgs）" },
+        { v: "node --test", k: "內建測試框架，零額外測試依賴" }
+      ],
+      links: [
+        { label: "npm 套件頁 ↗", href: "https://www.npmjs.com/package/html-block-assembler", primary: true },
+        { label: "GitHub 原始碼 ↗", href: "https://github.com/NaroFeng/_se/tree/main/HW07-" }
+      ]
     }
-  </script>
+  ];
+
+  /* ==========================================================
+     Modal 控制
+     ========================================================== */
+  var modal = document.getElementById("projectModal");
+  var modalDialog = document.getElementById("modalDialog");
+  var elBadge = document.getElementById("modalBadge");
+  var elTitle = document.getElementById("modalTitle");
+  var elPosition = document.getElementById("modalPosition");
+  var elCounter = document.getElementById("modalCounter");
+  var elHighlights = document.getElementById("modalHighlights");
+  var elTech = document.getElementById("modalTech");
+  var elMetrics = document.getElementById("modalMetrics");
+  var elLinks = document.getElementById("modalLinks");
+  var btnClose = document.getElementById("modalClose");
+  var btnPrev = document.getElementById("modalPrev");
+  var btnNext = document.getElementById("modalNext");
+
+  var current = 0;
+  var lastFocused = null;
+
+  function byId(id) {
+    for (var i = 0; i < PROJECTS.length; i++) {
+      if (PROJECTS[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  function render(index) {
+    var p = PROJECTS[index];
+    current = index;
+
+    elBadge.textContent = p.badge;
+    elTitle.textContent = p.title;
+    elPosition.innerHTML = p.position;
+    elCounter.textContent = (index + 1) + " / " + PROJECTS.length;
+
+    elHighlights.innerHTML = "";
+    p.highlights.forEach(function (h) {
+      var li = document.createElement("li");
+      li.innerHTML = h;
+      elHighlights.appendChild(li);
+    });
+
+    elTech.innerHTML = "";
+    p.tech.forEach(function (t) {
+      var span = document.createElement("span");
+      span.className = "tag";
+      span.textContent = t;
+      elTech.appendChild(span);
+    });
+
+    elMetrics.innerHTML = "";
+    p.metrics.forEach(function (m) {
+      var box = document.createElement("div");
+      box.className = "m-metric";
+      var v = document.createElement("div");
+      v.className = "v";
+      v.textContent = m.v;
+      var k = document.createElement("div");
+      k.className = "k";
+      k.textContent = m.k;
+      box.appendChild(v);
+      box.appendChild(k);
+      elMetrics.appendChild(box);
+    });
+
+    elLinks.innerHTML = "";
+    p.links.forEach(function (l) {
+      var a = document.createElement("a");
+      a.className = l.primary ? "btn primary sm" : "btn ghost sm";
+      a.href = l.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = l.label;
+      elLinks.appendChild(a);
+    });
+  }
+
+  function openModal(id) {
+    var idx = byId(id);
+    if (idx < 0) return;
+    lastFocused = document.activeElement;
+    render(idx);
+    modal.hidden = false;
+    document.body.classList.add("modal-open");
+    btnClose.focus();
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    document.body.classList.remove("modal-open");
+    if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+  }
+
+  function step(delta) {
+    var next = (current + delta + PROJECTS.length) % PROJECTS.length;
+    render(next);
+  }
+
+  /* 點擊卡片或「架構講解」按鈕 → 開啟 Modal
+     注意：卡片內的錨點連結優先，不應被卡片本身攔截開啟 Modal */
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    var anchor = t.closest ? t.closest("a[href]") : null;
+    if (!anchor) {
+      var opener = t.closest ? t.closest("[data-open-modal]") : null;
+      if (opener) {
+        e.preventDefault();
+        openModal(opener.getAttribute("data-open-modal"));
+        return;
+      }
+    }
+    /* 點背景遮罩 → 關閉（點到對話框本體時不關） */
+    if (!modal.hidden && e.target === modal) closeModal();
+  });
+
+  btnClose.addEventListener("click", closeModal);
+  btnPrev.addEventListener("click", function () { step(-1); });
+  btnNext.addEventListener("click", function () { step(1); });
+
+  /* 全域鍵盤：Esc 關閉、← / → 切換 */
+  document.addEventListener("keydown", function (e) {
+    if (modal.hidden) return;
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeModal();
+      return;
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      step(-1);
+      return;
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      step(1);
+      return;
+    }
+    if (e.key === "Tab") {
+      /* 焦點圈在 Modal 內 */
+      var focusables = modalDialog.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusables.length) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  /* ==========================================================
+     分類篩選
+     ========================================================== */
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip"));
+  var cards = Array.prototype.slice.call(document.querySelectorAll("#projectGrid .card"));
+  var countEl = document.getElementById("filterCount");
+
+  function applyFilter(filter) {
+    var shown = 0;
+    cards.forEach(function (card) {
+      var match = (filter === "all") || (card.getAttribute("data-category") === filter);
+      card.classList.toggle("is-hidden", !match);
+      if (match) shown++;
+    });
+    chips.forEach(function (c) {
+      c.setAttribute("aria-pressed", c.getAttribute("data-filter") === filter ? "true" : "false");
+    });
+    countEl.textContent = "顯示 " + shown + " / " + cards.length + " 個專案";
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      applyFilter(chip.getAttribute("data-filter"));
+    });
+  });
+})();
+</script>
 </body>
 </html>
